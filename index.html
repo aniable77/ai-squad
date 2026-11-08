@@ -2,61 +2,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Squad</title>
 <style>
-body {
-  margin:0;
-  padding:30px 18px;
-  background:#090b18;
-  color:white;
-  font-family:Arial,sans-serif;
-  text-align:center;
+*{box-sizing:border-box}
+body{
+ margin:0;background:#090b13;color:#f5f5ff;
+ font-family:Arial,sans-serif;
 }
-h1 {font-size:48px;color:#a99aff}
-p {color:#b8c0d8}
-.card {
-  background:#171d35;
-  padding:20px;
-  margin:14px auto;
-  border-radius:18px;
-  max-width:400px;
+header{
+ padding:22px 18px;border-bottom:1px solid #25283a;
+ display:flex;justify-content:space-between;align-items:center;
 }
-button {
-  padding:13px 22px;
-  border:0;
-  border-radius:12px;
-  background:linear-gradient(90deg,#a99aff,#55ddd4);
-  font-weight:bold;
+.logo{font-size:25px;font-weight:800;color:#a78bfa}
+.status{font-size:12px;color:#8d91a8}
+main{max-width:850px;margin:auto;padding:18px}
+h1{font-size:28px;margin-bottom:5px}
+.sub{color:#9296ad;font-size:14px}
+.squad{
+ display:grid;grid-template-columns:repeat(2,1fr);
+ gap:10px;margin:22px 0;
+}
+.member{
+ background:#141725;border:1px solid #292d43;
+ border-radius:14px;padding:14px;
+}
+.member b{display:block;margin-bottom:6px}
+.member span{font-size:12px;color:#999eb5}
+.chat{
+ background:#111522;border:1px solid #292d43;
+ border-radius:16px;overflow:hidden;
+}
+.chathead{padding:16px;border-bottom:1px solid #292d43}
+.chathead b{font-size:17px}
+.messages{
+ min-height:260px;max-height:430px;overflow-y:auto;
+ padding:15px;display:flex;flex-direction:column;gap:12px;
+}
+.message{
+ padding:12px 14px;border-radius:13px;
+ max-width:90%;line-height:1.5;font-size:14px;
+ white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.user{background:#5141a5;align-self:flex-end}
+.system{background:#202638;color:#c7cbe0;align-self:flex-start}
+.composer{
+ display:flex;gap:9px;padding:12px;
+ border-top:1px solid #292d43;
+}
+input{
+ flex:1;min-width:0;background:#202638;color:white;
+ border:1px solid #393f57;border-radius:10px;
+ padding:13px;font-size:15px;outline:none;
+}
+button{
+ background:#9273f5;color:white;border:0;
+ border-radius:10px;padding:0 18px;
+ font-weight:bold;font-size:14px;
+}
+.note{font-size:12px;color:#858ba4;padding:0 15px 14px}
+@media(max-width:430px){
+ main{padding:13px}
+ .squad{gap:8px}
+ .member{padding:11px}
 }
 </style>
 </head>
 <body>
-<h1>AI SQUAD</h1>
-<p>One place. Many minds.</p>
+<header>
+ <div class="logo">✦ AI SQUAD</div>
+ <div class="status">● YOUR SQUAD</div>
+</header>
 
-<div class="card">
-<h2>🧠 The Thinker</h2>
-<p>Ideas and problem solving.</p>
-</div>
+<main>
+ <h1>One place. Many minds.</h1>
+ <p class="sub">Four perspectives. One conversation.</p>
 
-<div class="card">
-<h2>⚡ The Creator</h2>
-<p>Creativity and imagination.</p>
-</div>
+ <section class="squad">
+  <div class="member">
+   <b>🧠 The Thinker</b>
+   <span>Ideas and deep thinking</span>
+  </div>
+  <div class="member">
+   <b>🎨 The Creator</b>
+   <span>Creativity and imagination</span>
+  </div>
+  <div class="member">
+   <b>🔎 The Researcher</b>
+   <span>Facts and exploration</span>
+  </div>
+  <div class="member">
+   <b>🛠️ The Builder</b>
+   <span>Solutions and coding</span>
+  </div>
+ </section>
 
-<div class="card">
-<h2>🔎 The Researcher</h2>
-<p>Research and discovery.</p>
-</div>
+ <section class="chat">
+  <div class="chathead">
+   <b>💬 Squad Group Chat</b>
+   <div class="status">All four assistants will share this room</div>
+  </div>
 
-<div class="card">
-<h2>🛠️ The Builder</h2>
-<p>Building new projects.</p>
-</div>
+  <div class="messages" id="messages">
+   <div class="message system">
+    Welcome to AI Squad! Send a message to start a conversation.
 
-<button onclick="alert('AI Squad is coming!')">
-Enter AI Squad
-</button>
+    AI connections are not activated yet. We're building the chat first.
+   </div>
+  </div>
+
+  <form class="composer" id="chatForm">
+   <input id="userInput" placeholder="Message the squad..." autocomplete="off">
+   <button type="submit">Send</button>
+  </form>
+  <div class="note">AI responses will appear here once the assistants are connected.</div>
+ </section>
+</main>
+
+<script>
+const form=document.getElementById("chatForm");
+const input=document.getElementById("userInput");
+const messages=document.getElementById("messages");
+
+form.addEventListener("submit",function(event){
+ event.preventDefault();
+ const value=input.value.trim();
+ if(!value)return;
+
+ const message=document.createElement("div");
+ message.className="message user";
+ message.textContent=value;
+ messages.appendChild(message);
+
+ const notice=document.createElement("div");
+ notice.className="message system";
+ notice.textContent="Message received! The four AI connections are our next build.";
+ messages.appendChild(notice);
+
+ input.value="";
+ messages.scrollTop=messages.scrollHeight;
+});
+</script>
 </body>
 </html>
