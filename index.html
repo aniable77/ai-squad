@@ -4,145 +4,559 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090817">
 <title>AI Squad</title>
+
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;background:#090b13;color:#f5f5ff;
- font-family:Arial,sans-serif;
+:root {
+  --bg:#090817;
+  --panel:#141329;
+  --purple:#9b7bff;
+  --blue:#559bff;
+  --text:#f6f3ff;
+  --muted:#9693b3;
+  --border:rgba(166,143,255,.19);
 }
-header{
- padding:22px 18px;border-bottom:1px solid #25283a;
- display:flex;justify-content:space-between;align-items:center;
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 15% 5%,#30205c 0,transparent 38%),
+    radial-gradient(ellipse at 90% 35%,#102e50 0,transparent 35%),
+    var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
 }
-.logo{font-size:25px;font-weight:800;color:#a78bfa}
-.status{font-size:12px;color:#8d91a8}
-main{max-width:850px;margin:auto;padding:18px}
-h1{font-size:28px;margin-bottom:5px}
-.sub{color:#9296ad;font-size:14px}
-.squad{
- display:grid;grid-template-columns:repeat(2,1fr);
- gap:10px;margin:22px 0;
+
+button,input { font:inherit; }
+
+header {
+  height:72px;
+  padding:0 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+  background:rgba(9,8,23,.75);
+  backdrop-filter:blur(15px);
+  position:sticky;
+  top:0;
+  z-index:5;
 }
-.member{
- background:#141725;border:1px solid #292d43;
- border-radius:14px;padding:14px;
+
+.logo {
+  font-size:23px;
+  font-weight:900;
+  letter-spacing:1px;
+  background:linear-gradient(90deg,#c4a7ff,#64c7ff);
+  color:transparent;
+  background-clip:text;
 }
-.member b{display:block;margin-bottom:6px}
-.member span{font-size:12px;color:#999eb5}
-.chat{
- background:#111522;border:1px solid #292d43;
- border-radius:16px;overflow:hidden;
+
+.status {
+  color:#8be8b5;
+  font-size:11px;
+  letter-spacing:1px;
 }
-.chathead{padding:16px;border-bottom:1px solid #292d43}
-.chathead b{font-size:17px}
-.messages{
- min-height:260px;max-height:430px;overflow-y:auto;
- padding:15px;display:flex;flex-direction:column;gap:12px;
+
+main {
+  max-width:950px;
+  margin:auto;
+  padding:28px 18px 50px;
 }
-.message{
- padding:12px 14px;border-radius:13px;
- max-width:90%;line-height:1.5;font-size:14px;
- white-space:pre-wrap;overflow-wrap:anywhere;
+
+.hero {
+  text-align:center;
+  padding:30px 10px 15px;
 }
-.user{background:#5141a5;align-self:flex-end}
-.system{background:#202638;color:#c7cbe0;align-self:flex-start}
-.composer{
- display:flex;gap:9px;padding:12px;
- border-top:1px solid #292d43;
+
+.hero h1 {
+  font-size:clamp(30px,6vw,46px);
+  margin:0;
+  letter-spacing:-1.5px;
 }
-input{
- flex:1;min-width:0;background:#202638;color:white;
- border:1px solid #393f57;border-radius:10px;
- padding:13px;font-size:15px;outline:none;
+
+.hero h1 span {
+  background:linear-gradient(90deg,#b38cff,#67bdff);
+  color:transparent;
+  background-clip:text;
 }
-button{
- background:#9273f5;color:white;border:0;
- border-radius:10px;padding:0 18px;
- font-weight:bold;font-size:14px;
+
+.hero p {
+  color:var(--muted);
+  font-size:14px;
 }
-.note{font-size:12px;color:#858ba4;padding:0 15px 14px}
-@media(max-width:430px){
- main{padding:13px}
- .squad{gap:8px}
- .member{padding:11px}
+
+.section-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:25px 0 13px;
+}
+
+.section-title h2 {
+  font-size:17px;
+  margin:0;
+}
+
+.small-btn {
+  background:#211c3d;
+  border:1px solid var(--border);
+  color:#c9b8ff;
+  border-radius:9px;
+  padding:9px 12px;
+  cursor:pointer;
+}
+
+.squad {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+
+.member {
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,#1c1935,#111426);
+  border:1px solid var(--border);
+  border-radius:17px;
+  padding:17px 12px;
+  text-align:center;
+  transition:.25s;
+}
+
+.member:hover {
+  transform:translateY(-5px);
+  border-color:#a78bfa;
+  box-shadow:0 10px 35px #8b5cf633;
+}
+
+.avatar {
+  width:58px;
+  height:58px;
+  margin:0 auto 12px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  font-size:30px;
+  background:linear-gradient(145deg,#47306e,#172d4b);
+  box-shadow:0 0 22px #8b5cf633;
+}
+
+.member h3 {
+  margin:0 0 6px;
+  font-size:14px;
+}
+
+.member p {
+  margin:0;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.editor {
+  display:none;
+  margin-top:15px;
+  padding:17px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:15px;
+}
+
+.editor.open { display:block; }
+
+.editor h3 { margin:0 0 15px; }
+
+.edit-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.edit-field label {
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+.edit-field input {
+  width:100%;
+  padding:11px;
+  color:white;
+  background:#201e36;
+  border:1px solid var(--border);
+  border-radius:9px;
+  outline:none;
+}
+
+.editor-actions {
+  display:flex;
+  gap:9px;
+  margin-top:14px;
+}
+
+.primary {
+  background:linear-gradient(100deg,#8659e8,#438eea);
+  border:0;
+  color:white;
+  padding:11px 17px;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.secondary {
+  background:#29253e;
+  color:#ccc3e9;
+  border:1px solid var(--border);
+  padding:11px 15px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.chat {
+  margin-top:25px;
+  overflow:hidden;
+  background:rgba(17,18,39,.9);
+  border:1px solid var(--border);
+  border-radius:19px;
+  box-shadow:0 15px 60px #0005;
+}
+
+.chathead {
+  padding:17px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.chathead h2 {
+  font-size:17px;
+  margin:0 0 5px;
+}
+
+.chathead p {
+  font-size:11px;
+  color:var(--muted);
+  margin:0;
+}
+
+.chat-icon {
+  font-size:24px;
+  background:#292044;
+  padding:10px;
+  border-radius:13px;
+}
+
+.messages {
+  min-height:260px;
+  max-height:420px;
+  overflow-y:auto;
+  padding:17px;
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+}
+
+.message {
+  max-width:88%;
+  padding:12px 15px;
+  border-radius:14px;
+  font-size:14px;
+  line-height:1.55;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+.user {
+  align-self:flex-end;
+  background:linear-gradient(120deg,#7650d6,#456edb);
+  border-bottom-right-radius:4px;
+}
+
+.system {
+  align-self:flex-start;
+  background:#25263c;
+  color:#d9d7eb;
+  border-bottom-left-radius:4px;
+}
+
+.composer {
+  display:flex;
+  gap:10px;
+  padding:13px;
+  border-top:1px solid var(--border);
+}
+
+.composer input {
+  flex:1;
+  min-width:0;
+  padding:14px;
+  border-radius:11px;
+  border:1px solid var(--border);
+  background:#202039;
+  color:white;
+  outline:none;
+}
+
+.composer input:focus,
+.edit-field input:focus {
+  border-color:var(--purple);
+}
+
+.send {
+  padding:0 20px;
+  background:linear-gradient(120deg,#9265f4,#4e91ee);
+  border:0;
+  border-radius:11px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.send:hover,.primary:hover { filter:brightness(1.15); }
+
+.note {
+  padding:0 15px 14px;
+  text-align:center;
+  color:#777995;
+  font-size:11px;
+}
+
+footer {
+  text-align:center;
+  padding:25px;
+  color:#77748f;
+  font-size:11px;
+}
+
+@media(max-width:600px) {
+  header { padding:0 15px; }
+  main { padding:18px 13px 35px; }
+  .squad { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hero { padding-top:25px; }
+  .member { padding:17px 9px; }
+  .message { max-width:94%; }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    animation:none!important;
+    transition:none!important;
+  }
 }
 </style>
 </head>
+
 <body>
+
 <header>
- <div class="logo">✦ AI SQUAD</div>
- <div class="status">● YOUR SQUAD</div>
+  <div class="logo">✦ AI SQUAD</div>
+  <div class="status">● SQUAD ONLINE</div>
 </header>
 
 <main>
- <h1>One place. Many minds.</h1>
- <p class="sub">Four perspectives. One conversation.</p>
 
- <section class="squad">
-  <div class="member">
-   <b>🧠 The Thinker</b>
-   <span>Ideas and deep thinking</span>
-  </div>
-  <div class="member">
-   <b>🎨 The Creator</b>
-   <span>Creativity and imagination</span>
-  </div>
-  <div class="member">
-   <b>🔎 The Researcher</b>
-   <span>Facts and exploration</span>
-  </div>
-  <div class="member">
-   <b>🛠️ The Builder</b>
-   <span>Solutions and coding</span>
-  </div>
- </section>
+  <section class="hero">
+    <h1>One place. <span>Many minds.</span></h1>
+    <p>Your personal team of artificial intelligence.</p>
+  </section>
 
- <section class="chat">
-  <div class="chathead">
-   <b>💬 Squad Group Chat</b>
-   <div class="status">All four assistants will share this room</div>
+  <div class="section-title">
+    <h2>✦ Your Squad</h2>
+    <button class="small-btn" id="editToggle">⚙ Customize</button>
   </div>
 
-  <div class="messages" id="messages">
-   <div class="message system">
-    Welcome to AI Squad! Send a message to start a conversation.
+  <section class="squad" id="squad"></section>
 
-    AI connections are not activated yet. We're building the chat first.
-   </div>
-  </div>
+  <section class="editor" id="editor">
+    <h3>⚙ Customize your squad</h3>
+    <div class="edit-grid" id="editGrid"></div>
+    <div class="editor-actions">
+      <button class="primary" id="save">Save changes</button>
+      <button class="secondary" id="reset">Reset</button>
+    </div>
+  </section>
 
-  <form class="composer" id="chatForm">
-   <input id="userInput" placeholder="Message the squad..." autocomplete="off">
-   <button type="submit">Send</button>
-  </form>
-  <div class="note">AI responses will appear here once the assistants are connected.</div>
- </section>
+  <section class="chat">
+    <div class="chathead">
+      <div>
+        <h2>💬 Squad Group Chat</h2>
+        <p>Your shared conversation room</p>
+      </div>
+      <div class="chat-icon">✦</div>
+    </div>
+
+    <div class="messages" id="messages" aria-live="polite">
+      <div class="message system">
+        Welcome to AI Squad!
+
+        Your squad is ready. Send a message to get started.
+      </div>
+    </div>
+
+    <form class="composer" id="chatForm">
+      <input id="userInput"
+        placeholder="Message the squad..."
+        autocomplete="off"
+        aria-label="Message the squad">
+      <button class="send" type="submit">Send ➤</button>
+    </form>
+
+    <div class="note">
+      Chat interface preview — AI connections are not activated yet.
+    </div>
+  </section>
+
 </main>
 
+<footer>
+  AI SQUAD © 2026 · Built for the future.
+</footer>
+
 <script>
-const form=document.getElementById("chatForm");
-const input=document.getElementById("userInput");
-const messages=document.getElementById("messages");
+const defaults = [
+  {name:"The Thinker",icon:"🧠",role:"Ideas and deep thinking"},
+  {name:"The Creator",icon:"🎨",role:"Creativity and imagination"},
+  {name:"The Researcher",icon:"🔎",role:"Facts and exploration"},
+  {name:"The Builder",icon:"🛠️",role:"Solutions and coding"}
+];
 
-form.addEventListener("submit",function(event){
- event.preventDefault();
- const value=input.value.trim();
- if(!value)return;
+let members = loadMembers();
 
- const message=document.createElement("div");
- message.className="message user";
- message.textContent=value;
- messages.appendChild(message);
+function loadMembers() {
+  try {
+    const saved = localStorage.getItem("aiSquadMembers");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length === 4 &&
+          parsed.every(m => typeof m.name === "string" &&
+          typeof m.icon === "string")) return parsed;
+    }
+  } catch(e) {}
+  return defaults.map(m => ({...m}));
+}
 
- const notice=document.createElement("div");
- notice.className="message system";
- notice.textContent="Message received! The four AI connections are our next build.";
- messages.appendChild(notice);
+const squad = document.getElementById("squad");
+const editor = document.getElementById("editor");
+const editGrid = document.getElementById("editGrid");
 
- input.value="";
- messages.scrollTop=messages.scrollHeight;
+function renderSquad() {
+  squad.innerHTML = "";
+
+  members.forEach(member => {
+    const card = document.createElement("article");
+    card.className = "member";
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = member.icon;
+
+    const name = document.createElement("h3");
+    name.textContent = member.name;
+
+    const role = document.createElement("p");
+    role.textContent = member.role;
+
+    card.append(avatar,name,role);
+    squad.appendChild(card);
+  });
+}
+
+function renderEditor() {
+  editGrid.innerHTML = "";
+
+  members.forEach((member,index) => {
+    const field = document.createElement("div");
+    field.className = "edit-field";
+
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "Member " + (index+1) + " name";
+
+    const nameInput = document.createElement("input");
+    nameInput.id = "name" + index;
+    nameInput.maxLength = 30;
+    nameInput.value = member.name;
+
+    const iconLabel = document.createElement("label");
+    iconLabel.textContent = "Emoji icon";
+
+    const iconInput = document.createElement("input");
+    iconInput.id = "icon" + index;
+    iconInput.maxLength = 8;
+    iconInput.value = member.icon;
+
+    field.append(nameLabel,nameInput,iconLabel,iconInput);
+    editGrid.appendChild(field);
+  });
+}
+
+document.getElementById("editToggle").onclick = () => {
+  editor.classList.toggle("open");
+  renderEditor();
+};
+
+document.getElementById("save").onclick = () => {
+  const updated = members.map((member,index) => ({
+    ...member,
+    name:document.getElementById("name"+index).value.trim()
+      || defaults[index].name,
+    icon:document.getElementById("icon"+index).value.trim()
+      || defaults[index].icon
+  }));
+
+  members = updated;
+
+  try {
+    localStorage.setItem("aiSquadMembers",JSON.stringify(members));
+  } catch(e) {}
+
+  renderSquad();
+  renderEditor();
+};
+
+document.getElementById("reset").onclick = () => {
+  members = defaults.map(m => ({...m}));
+  try {
+    localStorage.removeItem("aiSquadMembers");
+  } catch(e) {}
+  renderSquad();
+  renderEditor();
+};
+
+const form = document.getElementById("chatForm");
+const input = document.getElementById("userInput");
+const messages = document.getElementById("messages");
+
+form.addEventListener("submit",event => {
+  event.preventDefault();
+
+  const value = input.value.trim();
+  if (!value) return;
+
+  const message = document.createElement("div");
+  message.className = "message user";
+  message.textContent = value;
+  messages.appendChild(message);
+
+  const notice = document.createElement("div");
+  notice.className = "message system";
+  notice.textContent =
+    "Message received! AI connections are our next development step.";
+  messages.appendChild(notice);
+
+  input.value = "";
+  messages.scrollTop = messages.scrollHeight;
 });
+
+renderSquad();
 </script>
+
 </body>
 </html>
