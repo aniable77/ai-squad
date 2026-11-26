@@ -540,76 +540,100 @@ const sendButton = form.querySelector("button[type='submit']");
 
 const API_URL = "https://ai-squad-backend.reedyjhaddon.workers.dev/chat";
 
-form.addEventListener("submit", async event => {
 
+form.addEventListener("submit", async event => {
   event.preventDefault();
 
   const value = input.value.trim();
-
   if (!value || sendButton.disabled) return;
 
-  const userMessage = document.createElement("div");
+  const userBubble = document.createElement("div");
+  userBubble.className = "message user";
+  userBubble.textContent = value;
+  messages.appendChild(userBubble);
 
-  userMessage.className = "message user";
-
-  userMessage.textContent = value;
-
-  messages.appendChild(userMessage);
-
-  const reply = document.createElement("div");
-
-  reply.className = "message system";
-
-  reply.textContent = "🧠 Thinker is thinking...";
-
-  messages.appendChild(reply);
+  const squad = [
+    { id: "thinker", name: "🧠 Thinker" },
+    { id: "creator", name: "🎨 Creator" },
+    { id: "researcher", name: "🔎 Researcher" },
+    { id: "builder", name: "🛠️ Builder" }
+  ];
 
   input.value = "";
-
   input.disabled = true;
-
   sendButton.disabled = true;
 
+  let discussion = "User's message: " + value;
+
   try {
+    // Two rounds of squad discussion
+    for (let round = 1; round <= 2; round++) {
 
-    const response = await fetch(API_URL, {
+      const heading = document.createElement("div");
+      heading.className = "message system";
+      heading.textContent = "💬 Squad Discussion — Round " + round;
+      messages.appendChild(heading);
 
-      method: "POST",
+      for (const member of squad) {
+        const bubble = document.createElement("div");
+        bubble.className = "message system";
+        bubble.textContent = member.name + " is thinking...";
+        messages.appendChild(bubble);
 
-      headers: { "Content-Type": "application/json" },
+        messages.scrollTop = messages.scrollHeight;
 
-      body: JSON.stringify({
+        try {
+          const prompt = discussion.slice(-1450) +
+            "\n\nYou are " + member.name +
+            ". This is a conversation with three other AI teammates. " +
+            "React to their previous ideas, respectfully disagree if needed, " +
+            "and contribute something useful and original. " +
+            "Do not repeat the entire discussion.";
 
-        agent: "thinker",
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              agent: member.id,
+              message: prompt
+            })
+          });
 
-        message: value
+          const data = await response.json();
 
-      })
+          if (!response.ok) {
+            throw new Error(data.error || "Request failed");
+          }
 
-    });
+          const answer = data.reply ||
+            "I couldn't generate a response.";
 
-    const data = await response.json();
+          bubble.textContent = member.name + "\n" + answer;
 
-    if (!response.ok) throw new Error(data.error || "Request failed");
+          discussion += "\n\n" + member.name + ": " + answer;
 
-    reply.textContent = "🧠 Thinker\n" + data.reply;
+        } catch (error) {
+          bubble.textContent =
+            member.name + " couldn't respond: " + error.message;
+        }
 
-  } catch (error) {
+        messages.scrollTop = messages.scrollHeight;
+      }
+    }
 
-    reply.textContent = "Connection error: " + error.message;
+    const finished = document.createElement("div");
+    finished.className = "message system";
+    finished.textContent = "✨ Squad discussion complete!";
+    messages.appendChild(finished);
 
   } finally {
-
     input.disabled = false;
-
     sendButton.disabled = false;
-
     messages.scrollTop = messages.scrollHeight;
-
     input.focus();
-
   }
-
 });
 
 renderSquad();
