@@ -534,25 +534,82 @@ const form = document.getElementById("chatForm");
 const input = document.getElementById("userInput");
 const messages = document.getElementById("messages");
 
-form.addEventListener("submit",event => {
+
+
+const sendButton = form.querySelector("button[type='submit']");
+
+const API_URL = "https://ai-squad-backend.reedyjhaddon.workers.dev/chat";
+
+form.addEventListener("submit", async event => {
+
   event.preventDefault();
 
   const value = input.value.trim();
-  if (!value) return;
 
-  const message = document.createElement("div");
-  message.className = "message user";
-  message.textContent = value;
-  messages.appendChild(message);
+  if (!value || sendButton.disabled) return;
 
-  const notice = document.createElement("div");
-  notice.className = "message system";
-  notice.textContent =
-    "Message received! AI connections are our next development step.";
-  messages.appendChild(notice);
+  const userMessage = document.createElement("div");
+
+  userMessage.className = "message user";
+
+  userMessage.textContent = value;
+
+  messages.appendChild(userMessage);
+
+  const reply = document.createElement("div");
+
+  reply.className = "message system";
+
+  reply.textContent = "🧠 Thinker is thinking...";
+
+  messages.appendChild(reply);
 
   input.value = "";
-  messages.scrollTop = messages.scrollHeight;
+
+  input.disabled = true;
+
+  sendButton.disabled = true;
+
+  try {
+
+    const response = await fetch(API_URL, {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        agent: "thinker",
+
+        message: value
+
+      })
+
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error || "Request failed");
+
+    reply.textContent = "🧠 Thinker\n" + data.reply;
+
+  } catch (error) {
+
+    reply.textContent = "Connection error: " + error.message;
+
+  } finally {
+
+    input.disabled = false;
+
+    sendButton.disabled = false;
+
+    messages.scrollTop = messages.scrollHeight;
+
+    input.focus();
+
+  }
+
 });
 
 renderSquad();
