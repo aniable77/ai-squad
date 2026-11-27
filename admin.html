@@ -78,6 +78,7 @@ async function load(){
  const {data,error}=await client.auth.getSession();
  if(error||!data.session){state.textContent="Sign in to Combinze first, then return here.";denied.classList.remove("hidden");document.getElementById("deniedText").textContent="No active Combinze session was found. Open Combinze, sign in to your account, and revisit /admin.html.";return}
  try{
+ currentSession=data.session;
  const response=await fetch(ROUTER+"/admin/overview",{headers:{Authorization:"Bearer "+data.session.access_token}});
  const result=await response.json();
  if(!response.ok){state.textContent="";denied.classList.remove("hidden");document.getElementById("deniedText").textContent=result.error||"Admin access denied.";return}
