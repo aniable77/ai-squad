@@ -167,6 +167,31 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .feature-note{font-size:11px;color:#8794aa;margin-top:12px}
 @media(max-width:760px){.workspace-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-nav button{font-size:12px;padding:9px 7px}.workspace-nav .nav-caption{grid-column:1/-1}}
 
+
+/* Living squad wallpaper */
+.main{isolation:isolate;overflow:hidden}
+.squad-wallpaper{position:absolute;inset:66px 0 0;z-index:-1;pointer-events:none;overflow:hidden;--mix-a:rgba(143,112,255,.24);--mix-b:rgba(89,174,255,.2);--mix-c:rgba(75,220,190,.12);background:radial-gradient(ellipse at 50% 18%,var(--mix-a),transparent 34%),radial-gradient(ellipse at 78% 40%,var(--mix-b),transparent 35%),radial-gradient(ellipse at 20% 70%,var(--mix-c),transparent 36%);transition:background 1.8s ease}
+.squad-wallpaper:before,.squad-wallpaper:after{content:"";position:absolute;width:min(58vw,560px);aspect-ratio:1;border-radius:50%;left:50%;top:38%;transform:translate(-50%,-50%);border:1px solid rgba(186,174,255,.11);box-shadow:0 0 90px var(--mix-a),inset 0 0 90px rgba(100,145,255,.05);transition:all 1.8s ease}
+.squad-wallpaper:after{width:min(76vw,740px);border-style:dashed;opacity:.45;animation:orbitDrift 90s linear infinite}
+@keyframes orbitDrift{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.squad-wallpaper .wallpaper-core{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);width:clamp(170px,24vw,260px);aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;background:radial-gradient(circle at 35% 28%,#51427e,#171b32 64%,#101522);border:1px solid rgba(195,179,255,.35);box-shadow:0 0 55px var(--mix-a),0 0 130px rgba(99,130,255,.14),inset 0 0 40px rgba(255,255,255,.06);transition:box-shadow 1.8s ease,filter 1.8s ease}
+.wallpaper-core .core-symbol{font-size:clamp(48px,8vw,78px);line-height:1;color:#e9e1ff;text-shadow:0 0 25px #b39aff}
+.wallpaper-core strong{font-size:clamp(13px,2vw,18px);letter-spacing:.18em;color:#f3efff}
+.wallpaper-core small{font-size:9px;letter-spacing:.18em;color:#a9b5d0}
+.wallpaper-agent{position:absolute;left:50%;top:38%;width:clamp(43px,6vw,62px);height:clamp(43px,6vw,62px);margin:-27px;border-radius:19px;display:grid;place-items:center;font-size:clamp(19px,3vw,26px);background:#171e2d;border:1px solid rgba(180,190,220,.2);box-shadow:0 8px 32px #0008;opacity:.3;filter:grayscale(.7);transition:all 1.6s cubic-bezier(.2,.8,.2,1)}
+.wallpaper-agent.active{opacity:1;filter:none;box-shadow:0 0 30px var(--agent-glow);border-color:var(--agent-glow);transform:translate(var(--x),var(--y)) scale(1.08)}
+.wallpaper-agent:not(.active){transform:translate(var(--x),var(--y)) scale(.8)}
+.wallpaper-agent[data-agent="thinker"]{--x:0px;--y:-min(27vw,300px);--agent-glow:#a98cff}
+.wallpaper-agent[data-agent="creator"]{--x:min(34vw,360px);--y:0px;--agent-glow:#ff9fc9}
+.wallpaper-agent[data-agent="researcher"]{--x:0px;--y:min(27vw,300px);--agent-glow:#62d8c4}
+.wallpaper-agent[data-agent="builder"]{--x:min(-34vw,-360px);--y:0px;--agent-glow:#6daeff}
+.agent-picker .maker-mode{border:1px solid rgba(186,157,255,.42);background:linear-gradient(110deg,rgba(141,105,232,.19),rgba(84,145,226,.13));color:#eee8ff;font-weight:800}
+.agent-picker .maker-mode[aria-pressed="true"]{border-color:#c2a8ff;background:linear-gradient(110deg,rgba(145,106,245,.38),rgba(75,155,232,.28));box-shadow:0 0 22px rgba(155,128,255,.18)}
+.agent-options input:disabled{opacity:.6}
+.welcome{position:relative;z-index:1}
+.messages:has(.turn)~.composer-wrap{position:relative;z-index:1}
+@media(max-width:760px){.squad-wallpaper{inset:56px 0 0}.squad-wallpaper .wallpaper-core{top:31%;width:158px}.squad-wallpaper:before{top:31%;width:260px}.squad-wallpaper:after{top:31%;width:340px}.wallpaper-agent{top:31%;margin:-22px}.wallpaper-agent[data-agent="thinker"]{--y:-190px}.wallpaper-agent[data-agent="creator"]{--x:145px}.wallpaper-agent[data-agent="researcher"]{--y:190px}.wallpaper-agent[data-agent="builder"]{--x:-145px}}
+
 </style>
 </head>
 <body>
@@ -204,6 +229,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   </div>
  </aside>
  <main class="main">
+  <div class="squad-wallpaper" id="squadWallpaper" aria-hidden="true"><div class="wallpaper-core"><span class="core-symbol">✦</span><strong>THE MAKER</strong><small>THE CREATIVE CORE</small></div><span class="wallpaper-agent" data-agent="thinker">🧠</span><span class="wallpaper-agent" data-agent="creator">🎨</span><span class="wallpaper-agent" data-agent="researcher">🔎</span><span class="wallpaper-agent" data-agent="builder">🛠️</span></div>
   <header class="topbar">
    <div class="top-left"><button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open menu">☰</button><div class="current-title" id="currentTitle">New chat</div></div>
    <div class="top-right"><span class="top-tag">● SQUAD ONLINE</span><div class="top-actions"><button class="icon-btn" id="actionsBtn" aria-label="Chat options" title="Chat options">•••</button><div class="action-menu" id="actionMenu"><button id="renameChat">Rename conversation</button><button id="exportChat">Export conversation</button><button id="clearChat">Clear messages</button></div></div><button class="icon-btn" id="newChatTop" aria-label="Start a new chat" title="New chat">＋</button></div>
@@ -211,7 +237,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   <section class="content">
    <div class="messages" id="messages" aria-live="polite"></div>
    <div class="composer-wrap">
-    <div class="agent-picker"><span class="agent-picker-label">Talk to</span><div class="agent-options" id="agentOptions"><label><input type="checkbox" value="thinker" checked> 🧠 Thinker</label><label><input type="checkbox" value="creator" checked> 🎨 Creator</label><label><input type="checkbox" value="researcher" checked> 🔎 Researcher</label><label><input type="checkbox" value="builder" checked> 🛠️ Builder</label><button type="button" class="agent-all" id="selectAllAgents">All four</button></div><span class="agent-hint" id="agentHint">All four selected</span></div>
+    <div class="agent-picker"><span class="agent-picker-label">Talk to</span><div class="agent-options" id="agentOptions"><label><input type="checkbox" value="thinker" checked> 🧠 Thinker</label><label><input type="checkbox" value="creator" checked> 🎨 Creator</label><label><input type="checkbox" value="researcher" checked> 🔎 Researcher</label><label><input type="checkbox" value="builder" checked> 🛠️ Builder</label><button type="button" class="agent-all" id="selectAllAgents">All four</button><button type="button" class="agent-all maker-mode" id="makerModeBtn" aria-pressed="false">✦ The Maker</button></div><span class="agent-hint" id="agentHint">All four selected</span></div>
     <div class="tools-row"><button type="button" class="tools-trigger" id="toolsTrigger">＋ Tools</button><div class="tools-menu" id="toolsMenu" hidden><button type="button" id="createImageTool">🎨 Create an image</button><button type="button" id="thinkHarderTool" aria-pressed="false">🧠 Think harder <span id="thinkState">Off</span></button><div class="tools-coming">Camera, Photos, Files and Plugins are next</div></div></div>
     <div class="image-modal" id="imageModal" hidden><div class="image-modal-card"><button type="button" class="image-modal-close" id="closeImageModal" aria-label="Close">×</button><h2>Create an image</h2><p>Describe the picture you want Combinze to make.</p><textarea id="imagePrompt" maxlength="1800" placeholder="A cozy floating library above the clouds, soft golden light…"></textarea><button type="button" class="auth-action primary" id="generateImageBtn">Generate image</button><div class="image-status" id="imageStatus" role="status"></div></div></div>
     <form class="composer" id="chatForm">
@@ -256,17 +282,19 @@ const STORAGE_KEY="combinze_ai_squad_chats_v2";
 const app=document.getElementById("app"),chatList=document.getElementById("chatList"),messagesEl=document.getElementById("messages"),input=document.getElementById("userInput"),form=document.getElementById("chatForm"),sendBtn=document.getElementById("sendBtn"),currentTitle=document.getElementById("currentTitle");
 let chats=loadChats(),activeId=null,busy=false;
 const agentOptions=document.getElementById("agentOptions");
+let makerMode=false;
 function statusAgentHint(){document.getElementById("agentHint").textContent="Choose at least one agent"}
 function selectedAgents(){return [...agentOptions.querySelectorAll("input:checked")].map(x=>x.value)}
-function setSelectedAgents(keys){agentOptions.querySelectorAll("input").forEach(x=>x.checked=keys.includes(x.value));updateAgentHint()}
-function updateAgentHint(){const n=selectedAgents().length;document.getElementById("agentHint").textContent=n===4?"All four selected":n===0?"Choose at least one agent":n+" agents selected"}
+function setSelectedAgents(keys){agentOptions.querySelectorAll("input").forEach(x=>x.checked=keys.includes(x.value));updateAgentHint();updateSquadWallpaper()}
+function updateAgentHint(){const n=selectedAgents().length;document.getElementById("agentHint").textContent=makerMode?"The Maker · all four abilities":n===4?"All four specialists":n===0?"Choose at least one agent":n+" specialists selected";const b=document.getElementById("makerModeBtn");if(b)b.setAttribute("aria-pressed",String(makerMode));agentOptions.querySelectorAll("input").forEach(x=>x.disabled=makerMode)}
+function updateSquadWallpaper(){const el=document.getElementById("squadWallpaper");if(!el)return;const keys=selectedAgents();const colors={thinker:"rgba(157,119,255,.34)",creator:"rgba(255,119,190,.27)",researcher:"rgba(70,220,190,.24)",builder:"rgba(78,153,255,.3)"};const active=makerMode?["thinker","creator","researcher","builder"]:keys;const chosen=active.map(k=>colors[k]).filter(Boolean);const a=chosen[0]||"rgba(143,112,255,.12)",b=chosen[1]||"rgba(89,174,255,.1)",c=chosen[2]||chosen[0]||"rgba(75,220,190,.08)";el.style.setProperty("--mix-a",a);el.style.setProperty("--mix-b",b);el.style.setProperty("--mix-c",c);el.querySelectorAll(".wallpaper-agent").forEach(node=>node.classList.toggle("active",active.includes(node.dataset.agent)));el.classList.toggle("maker-active",makerMode)}
 const AGENTS={maker:{name:"The Maker",emoji:"✦",prompt:"You are The Maker, coordinating the full AI Squad."},thinker:{name:"Thinker",emoji:"🧠",prompt:"Take the lead as Thinker. Focus on careful reasoning, logic, and clear explanations. Give the user a direct answer in Thinker’s voice."},creator:{name:"Creator",emoji:"🎨",prompt:"Take the lead as Creator. Focus on imagination, writing, concepts, and original creative ideas. Give the user a direct answer in Creator’s voice."},researcher:{name:"Researcher",emoji:"🔎",prompt:"Take the lead as Researcher. Focus on evidence, accuracy, structured investigation, and clearly noting uncertainty. Give the user a direct answer in Researcher’s voice."},builder:{name:"Builder",emoji:"🛠️",prompt:"Take the lead as Builder. Focus on practical implementation, coding, debugging, and step-by-step project work. Give the user a direct answer in Builder’s voice."}};
 function id(){return "c_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}
 function loadChats(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");if(Array.isArray(x))return x.filter(c=>c&&typeof c.id==="string"&&Array.isArray(c.messages)).slice(0,100)}catch(e){}return []}
 function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(chats.slice(0,100)))}catch(e){showStorageNotice()}}
 function showStorageNotice(){const n=document.getElementById("storageNotice");if(n)return;const el=document.createElement("div");el.id="storageNotice";el.className="composer-note";el.textContent="Browser storage is full. Older chats may not save.";document.querySelector(".composer-wrap").appendChild(el)}
 function activeChat(){return chats.find(c=>c.id===activeId)||null}
-function makeChat(){const c={id:id(),title:"New chat",agent:"maker",agents:selectedAgents(),createdAt:Date.now(),updatedAt:Date.now(),messages:[]};chats.unshift(c);activeId=c.id;persist();renderAll();input.focus();closeMenu()}
+function makeChat(){const c={id:id(),title:"New chat",agent:makerMode?"maker":selectedAgents().length===1?selectedAgents()[0]:"custom",agents:selectedAgents(),makerMode,createdAt:Date.now(),updatedAt:Date.now(),messages:[]};chats.unshift(c);activeId=c.id;persist();renderAll();input.focus();closeMenu()}
 function titleFrom(text){return "New conversation"}
 async function generateChatTitle(message){try{const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({agent:"thinker",message:"Create a short, clear title for this conversation based on the user's message. Capture the actual topic, not just the first words. Use 2–6 words, title case, no quotes, no explanation.\n\nUser message: "+message,context:""})});if(!response.ok)return null;const data=await response.json();const title=String(data.reply||"").trim().replace(/^["'“”]+|["'“”]+$/g,"").replace(/\s+/g," ");if(!title||title.length>55||title.includes("\n"))return null;return title;}catch(e){return null}}
 function renderList(){
@@ -351,7 +379,7 @@ async function typeAssistantMessage(m){
  text.replaceChildren();renderRichText(text,value);
  if(m.contributions&&m.contributions.length){const details=document.createElement("details");details.className="turn-tools";const summary=document.createElement("summary");summary.className="tiny-btn";summary.textContent="See specialist contributions";details.appendChild(summary);m.contributions.forEach(c=>{const part=document.createElement("div");part.style.cssText="font-size:12px;line-height:1.6;color:#9da9bd;margin-top:10px;white-space:pre-wrap";part.textContent=(c.name||c.agent||"Specialist")+": "+(c.reply||c.error||"No response");details.appendChild(part)});body.appendChild(details);}
 }
-function renderAll(){const c=activeChat();currentTitle.textContent=c?c.title:"New chat";if(c)setSelectedAgents(Array.isArray(c.agents)?c.agents:(c.agent==="maker"?["thinker","creator","researcher","builder"]:[c.agent]));renderList();renderMessages();updateChatActions()}
+function renderAll(){const c=activeChat();currentTitle.textContent=c?c.title:"New chat";makerMode=!!(c&&c.makerMode);if(c)setSelectedAgents(Array.isArray(c.agents)?c.agents:(c.agent==="maker"?["thinker","creator","researcher","builder"]:[c.agent]));updateAgentHint();updateSquadWallpaper();renderList();renderMessages();updateChatActions()}
 function updateChatActions(){const has=!!activeChat();["renameChat","exportChat","clearChat"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=!has})}
 function closeActionMenu(){document.getElementById("actionMenu").classList.remove("open")}
 function exportChat(){const c=activeChat();if(!c)return;const payload={app:"Combinze AI Squad",title:c.title,exportedAt:new Date().toISOString(),messages:c.messages};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=(c.title||"combinze-chat").replace(/[^a-z0-9-_]+/gi,"-").slice(0,48)+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);closeActionMenu()}
@@ -368,7 +396,7 @@ async function sendMessage(raw){
  const value=raw.trim();if(!value||busy)return;
  if(!activeChat())makeChat();
  const c=activeChat();if(!c)return;
- const chosen=selectedAgents();if(!chosen.length){statusAgentHint();return;}c.agents=chosen;c.agent=chosen.length===4?"maker":chosen.length===1?chosen[0]:"custom";const agent=chosen.length===1?AGENTS[chosen[0]]:AGENTS.maker;
+ const chosen=selectedAgents();if(!chosen.length){statusAgentHint();return;}c.agents=chosen;c.makerMode=makerMode;c.agent=makerMode?"maker":chosen.length===1?chosen[0]:"custom";const agent=makerMode?AGENTS.maker:chosen.length===1?AGENTS[chosen[0]]:{name:"The Squad",emoji:"✦"};
  c.messages.push({role:"user",content:value,at:Date.now()});
  const needsAiTitle=c.messages.length===1;if(c.title==="New chat")c.title=titleFrom(value);
  c.updatedAt=Date.now();chats.sort((a,b)=>b.updatedAt-a.updatedAt);persist();renderAll();
@@ -466,8 +494,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")featureModal.hidden=
 document.getElementById("menuBtn").addEventListener("click",openMenu);
 document.getElementById("backdrop").addEventListener("click",closeMenu);
 document.getElementById("chatSearch").addEventListener("input",renderList);
-agentOptions.addEventListener("change",()=>{updateAgentHint();const c=activeChat();if(c){c.agents=selectedAgents();c.agent=c.agents.length===4?"maker":c.agents.length===1?c.agents[0]:"custom";persist();}});
-document.getElementById("selectAllAgents").addEventListener("click",()=>{setSelectedAgents(["thinker","creator","researcher","builder"]);const c=activeChat();if(c){c.agents=selectedAgents();c.agent="maker";persist();}});
+agentOptions.addEventListener("change",()=>{makerMode=false;updateAgentHint();updateSquadWallpaper();const c=activeChat();if(c){c.agents=selectedAgents();c.makerMode=false;c.agent=c.agents.length===1?c.agents[0]:"custom";persist();}});
+document.getElementById("selectAllAgents").addEventListener("click",()=>{makerMode=false;setSelectedAgents(["thinker","creator","researcher","builder"]);const c=activeChat();if(c){c.agents=selectedAgents();c.makerMode=false;c.agent="custom";persist();}});
+document.getElementById("makerModeBtn").addEventListener("click",()=>{makerMode=!makerMode;if(makerMode)setSelectedAgents(["thinker","creator","researcher","builder"]);updateAgentHint();updateSquadWallpaper();const c=activeChat();if(c){c.makerMode=makerMode;c.agents=selectedAgents();c.agent=makerMode?"maker":c.agents.length===1?c.agents[0]:"custom";persist();}});
 document.getElementById("actionsBtn").addEventListener("click",()=>document.getElementById("actionMenu").classList.toggle("open"));
 document.getElementById("renameChat").addEventListener("click",renameChat);
 document.getElementById("exportChat").addEventListener("click",exportChat);
