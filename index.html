@@ -485,19 +485,24 @@ function openFeature(view){
   let items=[];try{items=JSON.parse(localStorage.getItem("combinze_projects")||"[]")}catch(e){}
   const list=document.createElement("div");list.className="feature-list";items.forEach(x=>{const el=document.createElement("div");el.className="feature-row";el.textContent="📁 "+x.name;list.appendChild(el)});featureContent.appendChild(list);
   if(!items.length)note("Your projects will appear here.");
- }else if(view==="settings"){
-  p("Manage your Combinze workspace.");
-  row("Account","Sign-in status", "Account info");
-  row("Customize Combinze","Squad and appearance","Open"); 
-  row("General","Language and preferences","Coming soon");
-  row("Usage and limits","AI usage depends on available service limits","Info");
-  row("Notifications","Notification preferences","Coming soon");
-  row("Voice","Voice features are not connected yet","Coming soon");
-  row("Safety & wellbeing","Use Combinze thoughtfully","Info");
-  row("Security and login","Managed by your sign-in provider","Info");
-  row("Storage","Chats are stored in this browser","Info");
-  row("Data controls","Export or clear individual chats from chat options","Open");
-  note("Cloud backup, account-wide settings, and push notifications are not implemented yet.");
+  }else if(view==="settings"){
+   p("Manage your Combinze account and workspace.");
+   row("Account","Signed-in account or guest preview",{label:"View",run:async()=>{const {data,error}=await authClient.auth.getUser();const d=document.createElement("p");d.textContent=error?"Could not load account details.":data.user?.email||"You're using guest preview.";featureContent.appendChild(d)}});
+   row("Sign out","End this session",{label:"Sign out",run:async()=>{const {error}=await authClient.auth.signOut();if(error){alert("Could not sign out: "+error.message);return;}sessionStorage.removeItem("combinze_guest_mode");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+   row("Customize Combinze","Choose your specialists",{label:"Open",run:()=>openFeature("customize")});
+   row("Usage and limits","AI requests are protected by short-term limits",{label:"Details",run:()=>note("Chat: 60 requests per minute per IP and signed-in account. Images: 12 per minute per IP and signed-in account. These are not daily or monthly spending budgets.")});
+   row("Notifications","Not connected yet",{label:"Info",run:()=>note("Push and email notification preferences are planned, but not active yet.")});
+   row("Voice","Not connected yet",{label:"Info",run:()=>note("Voice is planned. This screen does not request microphone access.")});
+   row("Safety & wellbeing","Use Combinze thoughtfully",{label:"Info",run:()=>note("Combinze is an AI tool. Check important information and take breaks when you need them.")});
+   row("Security and login","Managed by Supabase Auth",{label:"Info",run:()=>note("Supabase handles sign-in. Signed-in session tokens are checked by the Combinze AI router.")});
+   row("Storage","Local browser storage",{label:"Check",run:async()=>{let detail="Chats are saved in this browser on this device.";try{if(navigator.storage?.estimate){const x=await navigator.storage.estimate(),used=Number(x.usage||0);detail+=" Approximate site storage used: "+(used<1048576?Math.round(used/1024)+" KB":(used/1048576).toFixed(1)+" MB")+". This includes all site data.";}}catch(e){}note(detail)}});
+   row("Data controls","Export or clear this browser's chats",{label:"Open",run:()=>openFeature("dataControls")});
+   note("Cloud backup, cross-device sync, push notifications, and voice are not implemented yet.");
+  }else if(view==="dataControls"){
+   p("Your conversations currently live in this browser. Export a backup before clearing them.");
+   const exportBtn=document.createElement("button");exportBtn.className="feature-primary";exportBtn.textContent="Export conversations";exportBtn.addEventListener("click",()=>{const payload={product:"Combinze",exportedAt:new Date().toISOString(),chats};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="combinze-chats-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});featureContent.appendChild(exportBtn);
+   const clearBtn=document.createElement("button");clearBtn.type="button";clearBtn.textContent="Clear all local conversations";clearBtn.style.cssText="display:block;margin-top:12px;border:1px solid #9b5360;background:#3a2029;color:#fff;border-radius:10px;padding:10px 14px";clearBtn.addEventListener("click",()=>{if(!confirm("Delete all conversations saved in this browser? Export a backup first if you want to keep them."))return;chats=[];activeId=null;localStorage.removeItem(STORAGE_KEY);renderAll();featureModal.hidden=true;});featureContent.appendChild(clearBtn);
+   note("This only affects conversations stored in this browser. It does not delete your Supabase account or data in other services.");
  }else if(view==="customize"){
   p("Choose which specialists you want to talk to. Your selection also controls the squad experience.");
   const names=[["thinker","🧠 Thinker"],["creator","🎨 Creator"],["researcher","🔎 Researcher"],["builder","🛠️ Builder"]];
