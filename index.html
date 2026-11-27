@@ -270,6 +270,18 @@ function renderMessages(){
  messagesEl.innerHTML="";const c=activeChat();if(!c||!c.messages.length){renderWelcome();return}
  c.messages.forEach(addTurn);scrollBottom();
 }
+async function typeAssistantMessage(m){
+ const row=document.createElement("article");row.className="turn assistant-turn";
+ const av=document.createElement("div");av.className="turn-avatar";av.textContent=(AGENTS[m.agent]||AGENTS.maker).emoji;
+ const body=document.createElement("div");body.className="turn-body";
+ const name=document.createElement("div");name.className="turn-name";name.textContent=((AGENTS[m.agent]||AGENTS.maker).emoji+" "+(AGENTS[m.agent]||AGENTS.maker).name).toUpperCase();
+ const text=document.createElement("div");text.className="turn-text";const cursor=document.createElement("span");cursor.textContent="▍";cursor.style.cssText="color:#a78bfa;animation:pulse 1s infinite";text.appendChild(cursor);
+ body.append(name,text);row.append(av,body);messagesEl.appendChild(row);
+ const value=String(m.content||"");let shown=0;
+ while(shown<value.length){shown=Math.min(value.length,shown+Math.max(3,Math.ceil(value.length/700)));text.textContent=value.slice(0,shown);text.appendChild(cursor);scrollBottom();await new Promise(resolve=>setTimeout(resolve,12));}
+ text.replaceChildren();renderRichText(text,value);
+ if(m.contributions&&m.contributions.length){const details=document.createElement("details");details.className="turn-tools";const summary=document.createElement("summary");summary.className="tiny-btn";summary.textContent="See specialist contributions";details.appendChild(summary);m.contributions.forEach(c=>{const part=document.createElement("div");part.style.cssText="font-size:12px;line-height:1.6;color:#9da9bd;margin-top:10px;white-space:pre-wrap";part.textContent=(c.name||c.agent||"Specialist")+": "+(c.reply||c.error||"No response");details.appendChild(part)});body.appendChild(details);}
+}
 function renderAll(){const c=activeChat();currentTitle.textContent=c?c.title:"New chat";if(c)setSelectedAgents(Array.isArray(c.agents)?c.agents:(c.agent==="maker"?["thinker","creator","researcher","builder"]:[c.agent]));renderList();renderMessages();updateChatActions()}
 function updateChatActions(){const has=!!activeChat();["renameChat","exportChat","clearChat"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=!has})}
 function closeActionMenu(){document.getElementById("actionMenu").classList.remove("open")}
@@ -320,7 +332,7 @@ async function sendMessage(raw){
   if(contributions.length<squad.length)reply+="\n\n(Some selected agents didn't respond.)";
   const aiTitle=await titlePromise;if(needsAiTitle&&aiTitle)c.title=aiTitle;
   c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions,at:Date.now()});
-  c.updatedAt=Date.now();persist();pending.remove();renderAll();
+  c.updatedAt=Date.now();persist();pending.remove();currentTitle.textContent=c.title;renderList();await typeAssistantMessage(c.messages[c.messages.length-1]);
  }catch(err){
   status.classList.add("error");status.textContent="Couldn't reach "+agent.name+": "+(err&&err.message?err.message:"Unknown error");
   dots.remove();
