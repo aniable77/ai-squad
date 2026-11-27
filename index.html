@@ -277,7 +277,7 @@ authForm.addEventListener("submit",async e=>{e.preventDefault();authError.textCo
 function showCombinze(){authScreen.hidden=true;document.getElementById("app").style.display="grid";const tag=document.querySelector(".top-tag");if(tag)tag.textContent=sessionStorage.getItem("combinze_guest_mode")==="1"?"● GUEST PREVIEW":"● SQUAD ONLINE";}
 document.getElementById("guestMode").addEventListener("click",()=>{sessionStorage.setItem("combinze_guest_mode","1");showCombinze();});
 (async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();}else if(sessionStorage.getItem("combinze_guest_mode")==="1")showCombinze();})();
-authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED")syncCloudLibrary();}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");setCloudSyncLabel("Browser only");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
 
 const MAKER_API_URL="https://combinze-maker.reedyjhaddon.workers.dev/chat";
 const AGENT_API_URL="https://combinze-agent-router.reedyjhaddon.workers.dev/chat";
@@ -303,7 +303,36 @@ function updateSquadWallpaper(){const el=document.getElementById("squadWallpaper
 const AGENTS={maker:{name:"The Maker",emoji:"✦",prompt:"You are The Maker, coordinating the full AI Squad."},squad:{name:"The Squad",emoji:"✦",prompt:"The four specialists are collaborating."},thinker:{name:"Thinker",emoji:"🧠",prompt:"Take the lead as Thinker. Focus on careful reasoning, logic, and clear explanations. Give the user a direct answer in Thinker’s voice."},creator:{name:"Creator",emoji:"🎨",prompt:"Take the lead as Creator. Focus on imagination, writing, concepts, and original creative ideas. Give the user a direct answer in Creator’s voice."},researcher:{name:"Researcher",emoji:"🔎",prompt:"Take the lead as Researcher. Focus on evidence, accuracy, structured investigation, and clearly noting uncertainty. Give the user a direct answer in Researcher’s voice."},builder:{name:"Builder",emoji:"🛠️",prompt:"Take the lead as Builder. Focus on practical implementation, coding, debugging, and step-by-step project work. Give the user a direct answer in Builder’s voice."}};
 function id(){return "c_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}
 function loadChats(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");if(Array.isArray(x))return x.filter(c=>c&&typeof c.id==="string"&&Array.isArray(c.messages)).slice(0,100)}catch(e){}return []}
-function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(chats.slice(0,100)))}catch(e){showStorageNotice()}}
+let cloudSyncTimer=null,cloudSyncBusy=false,cloudSyncAgain=false,cloudSyncLabel="Browser only";
+function setCloudSyncLabel(value){cloudSyncLabel=value;const n=document.getElementById("cloudSyncStatus");if(n)n.textContent=value}
+async function signedInUser(){const {data,error}=await authClient.auth.getUser();if(error)throw error;return data.user||null}
+function cloudHeaders(token){return {apikey:SUPABASE_KEY,Authorization:"Bearer "+token,"Content-Type":"application/json"}}
+function cloudSafeChat(c){const copy={...c,messages:(c.messages||[]).map(m=>{const x={...m};delete x.image;return x;})};return copy}
+function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(chats.slice(0,100)))}catch(e){showStorageNotice()}queueCloudSync()}
+function queueCloudSync(){if(sessionStorage.getItem("combinze_guest_mode")==="1")return;if(cloudSyncTimer)clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(()=>syncCloudLibrary(),1400)}
+async function syncCloudLibrary(){
+ if(cloudSyncBusy){cloudSyncAgain=true;return}
+ cloudSyncBusy=true;
+ try{
+  const {data}=await authClient.auth.getSession();const token=data.session?.access_token;if(!token){setCloudSyncLabel("Browser only");return}
+  setCloudSyncLabel("Syncing…");
+  const user=await signedInUser();if(!user){setCloudSyncLabel("Browser only");return}
+  const url=SUPABASE_URL+"/rest/v1/conversations?select=id,title,payload,updated_at&order=updated_at.desc";
+  const response=await fetch(url,{headers:cloudHeaders(token)});
+  if(!response.ok)throw new Error("Could not load cloud Library ("+response.status+")");
+  const remote=await response.json();const byId=new Map(chats.map(c=>[c.id,c]));
+  for(const row of remote){const c=row.payload;if(!c||typeof c.id!=="string"||!Array.isArray(c.messages))continue;const local=byId.get(c.id);if(!local||Number(c.updatedAt||0)>Number(local.updatedAt||0))byId.set(c.id,c)}
+  chats=[...byId.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,100);
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(chats))}catch(e){showStorageNotice()}
+  const records=chats.map(c=>{const safe=cloudSafeChat(c);return {id:safe.id,user_id:user.id,title:String(safe.title||"New chat").slice(0,120),payload:safe,updated_at:new Date(safe.updatedAt||Date.now()).toISOString(),created_at:new Date(safe.createdAt||Date.now()).toISOString()}});
+  for(const record of records){const body=JSON.stringify(record);if(new Blob([body]).size>240000)continue;const up=await fetch(SUPABASE_URL+"/rest/v1/conversations?on_conflict=id",{method:"POST",headers:{...cloudHeaders(token),Prefer:"resolution=merge-duplicates,return=minimal"},body});if(!up.ok)throw new Error("Cloud save failed ("+up.status+")")}
+  setCloudSyncLabel("Cloud synced");
+  if(activeId&&!chats.some(c=>c.id===activeId))activeId=null;
+  renderAll();
+ }catch(e){setCloudSyncLabel("Sync paused · "+(e.message||"try again"))}
+ finally{cloudSyncBusy=false;if(cloudSyncAgain){cloudSyncAgain=false;queueCloudSync()}}
+}
+async function deleteCloudChat(chatId){try{const {data}=await authClient.auth.getSession();const token=data.session?.access_token;if(!token)return;const r=await fetch(SUPABASE_URL+"/rest/v1/conversations?id=eq."+encodeURIComponent(chatId),{method:"DELETE",headers:cloudHeaders(token)});if(!r.ok)setCloudSyncLabel("Cloud delete needs retry")}catch(e){setCloudSyncLabel("Cloud delete needs retry")}}
 function showStorageNotice(){const n=document.getElementById("storageNotice");if(n)return;const el=document.createElement("div");el.id="storageNotice";el.className="composer-note";el.textContent="Browser storage is full. Older chats may not save.";document.querySelector(".composer-wrap").appendChild(el)}
 function activeChat(){return chats.find(c=>c.id===activeId)||null}
 function makeChat(){const c={id:id(),title:"New chat",agent:makerMode?"maker":selectedAgents().length===1?selectedAgents()[0]:"squad",agents:selectedAgents(),makerMode,createdAt:Date.now(),updatedAt:Date.now(),messages:[]};chats.unshift(c);activeId=c.id;persist();renderAll();input.focus();closeMenu()}
@@ -398,7 +427,7 @@ function exportChat(){const c=activeChat();if(!c)return;const payload={app:"Comb
 function renameChat(){const c=activeChat();if(!c)return;const next=prompt("Name this conversation:",c.title);if(next===null)return;const title=next.trim().slice(0,60);if(!title)return;c.title=title;c.updatedAt=Date.now();persist();renderAll();closeActionMenu()}
 function clearChat(){const c=activeChat();if(!c||!confirm("Clear all messages in this conversation?"))return;c.messages=[];c.title="New chat";c.updatedAt=Date.now();persist();renderAll();closeActionMenu()}
 function scrollBottom(){messagesEl.scrollTop=messagesEl.scrollHeight}
-function deleteChat(chatId){const c=chats.find(x=>x.id===chatId);if(!c)return;if(!confirm("Delete this conversation? This cannot be undone."))return;chats=chats.filter(x=>x.id!==chatId);if(activeId===chatId)activeId=chats[0]?.id||null;persist();renderAll()}
+function deleteChat(chatId){const c=chats.find(x=>x.id===chatId);if(!c)return;if(!confirm("Delete this conversation? This cannot be undone."))return;chats=chats.filter(x=>x.id!==chatId);deleteCloudChat(chatId);if(activeId===chatId)activeId=chats[0]?.id||null;persist();renderAll()}
 function closeMenu(){app.classList.remove("menu-open")}
 function openMenu(){app.classList.add("menu-open")}
 function resizeInput(){input.style.height="auto";input.style.height=Math.min(input.scrollHeight,180)+"px"}
@@ -477,7 +506,7 @@ function openFeature(view){
   const list=document.createElement("div");list.className="feature-list";
   if(!chats.length)p("No conversations yet.");
   chats.forEach(c=>{const el=document.createElement("div");el.className="feature-row";const label=document.createElement("span");label.textContent=c.title||"New chat";const btn=document.createElement("button");btn.textContent="Open";btn.addEventListener("click",()=>{activeId=c.id;renderAll();featureModal.hidden=true;});el.append(label,btn);list.appendChild(el)});featureContent.appendChild(list);
-  note("Library currently shows your saved chat history. File uploads and cross-device sync are not connected yet.");
+  const cloud=document.createElement("div");cloud.className="feature-note";cloud.id="cloudSyncStatus";cloud.textContent=cloudSyncLabel;featureContent.appendChild(cloud);row("Cloud Library","Signed-in chats sync across devices","Sync now");featureContent.lastChild.querySelector("button").addEventListener("click",()=>syncCloudLibrary());note("Signed-in text chats sync securely. Guest chats stay on this device. Generated image files are kept locally and are not uploaded to the cloud Library.");
  }else if(view==="projects"){
   p("Create a space for a project. Projects are saved locally in this browser for now.");
   const input=document.createElement("input");input.className="feature-input";input.placeholder="Project name";input.maxLength=60;input.id="projectNameInput";featureContent.appendChild(input);
