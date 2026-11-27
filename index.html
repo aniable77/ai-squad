@@ -348,7 +348,7 @@ async function sendMessage(raw){
   }));
   contributions=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
   if(!contributions.length)throw new Error("All selected agents failed: "+results.map((x,i)=>x.status==="rejected"?squad[i]+": "+x.reason.message:"").filter(Boolean).join(" | "));
-  reply=contributions.map(x=>AGENTS[x.agent].emoji+" "+AGENTS[x.agent].name+"\n"+x.reply).join("\n\n");
+  reply=contributions.map(x=>x.reply).join("\n\n");
   if(contributions.length<squad.length)reply+="\n\n(Some selected agents didn't respond.)";
   const aiTitle=await titlePromise;if(needsAiTitle&&aiTitle)c.title=aiTitle;
   c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions,at:Date.now()});
