@@ -457,12 +457,12 @@ function resizeInput(){input.style.height="auto";input.style.height=Math.min(inp
 function setBusy(v){busy=v;sendBtn.disabled=v;input.disabled=v;sendBtn.textContent=v?"…":"➤"}
 function buildContext(c){return c.messages.slice(-12).map(m=>(m.role==="user"?"User":"The Maker")+": "+m.content).join("\n\n").slice(-7500)}
 async function planMakerAgents(message,context){
- const prompt='Choose the smallest useful set of Combinze specialists for this request. Available specialists: thinker (reasoning and evaluation), creator (creative concepts and writing), researcher (factual research and uncertainty), builder (coding and implementation). Select only specialists that add real value; use multiple for genuinely multi-disciplinary requests. Return ONLY valid JSON in this exact shape: {"agents":["thinker","builder"]}. No prose or markdown.\\nUser request: '+message;
+ const prompt='Choose the smallest useful set of Combinze specialists for this request. Available specialists: thinker (reasoning and evaluation), creator (creative concepts and writing), researcher (factual research and uncertainty), builder (coding and implementation). Select only specialists that add real value; use multiple for genuinely multi-disciplinary requests. Return ONLY valid JSON in this exact shape: {"agents":["thinker","builder"]}. No prose or markdown. User request: '+message;
  try{
   const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8",...(await authHeaders())},body:JSON.stringify({agent:"thinker",message:prompt,context:"",thinking:false})});
   const data=await response.json();if(!response.ok||typeof data.reply!=="string")throw new Error("Planner unavailable");
-  const match=data.reply.match(/\\{[\\s\\S]*\\}/);if(!match)throw new Error("Planner returned invalid JSON");
-  const parsed=JSON.parse(match[0]),allowed=["thinker","creator","researcher","builder"];
+  const first=data.reply.indexOf("{"),last=data.reply.lastIndexOf("}");if(first<0||last<first)throw new Error("Planner returned invalid JSON");
+  const parsed=JSON.parse(data.reply.slice(first,last+1)),allowed=["thinker","creator","researcher","builder"];
   const chosen=[...new Set((Array.isArray(parsed.agents)?parsed.agents:[]).filter(x=>allowed.includes(x)))];
   if(!chosen.length)throw new Error("Planner selected no specialists");
   return chosen;
