@@ -152,7 +152,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   <input class="chat-search" id="chatSearch" type="search" placeholder="Search your chats..." aria-label="Search conversations">
   <nav class="chat-list" id="chatList" aria-label="Your conversations"></nav>
   <div class="side-bottom">
-   <div class="squad-mini-title">THE SQUAD · 5 MINDS</div>
+   <div class="squad-mini-title">THE SQUAD · 4 SPECIALISTS</div>
    <div class="agent-mini"><span class="agent-dot">🧠</span> Thinker <span class="online"></span></div>
    <div class="agent-mini"><span class="agent-dot">🎨</span> Creator <span class="online"></span></div>
    <div class="agent-mini"><span class="agent-dot">🔎</span> Researcher <span class="online"></span></div>
@@ -170,7 +170,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
    <div class="composer-wrap">
     <div class="agent-picker"><span class="agent-picker-label">Talk to</span><div class="agent-options" id="agentOptions"><label><input type="checkbox" value="thinker" checked> 🧠 Thinker</label><label><input type="checkbox" value="creator" checked> 🎨 Creator</label><label><input type="checkbox" value="researcher" checked> 🔎 Researcher</label><label><input type="checkbox" value="builder" checked> 🛠️ Builder</label><button type="button" class="agent-all" id="selectAllAgents">All four</button></div><span class="agent-hint" id="agentHint">All four selected</span></div>
     <form class="composer" id="chatForm">
-     <textarea id="userInput" rows="1" maxlength="6000" placeholder="Message The Maker..." aria-label="Message The Maker"></textarea>
+     <textarea id="userInput" rows="1" maxlength="6000" placeholder="Message your squad..." aria-label="Message The Maker"></textarea>
      <button class="send-btn" id="sendBtn" type="submit" aria-label="Send message">➤</button>
     </form>
     <div class="composer-note">The Maker brings all four specialists together. Your chats stay in this browser.</div>
@@ -217,8 +217,8 @@ function renderList(){
 function renderWelcome(){
  const wrap=document.createElement("div");wrap.className="welcome";
  const mark=document.createElement("div");mark.className="welcome-mark";mark.textContent="✦";
- const h=document.createElement("h1");h.append("One chat. ");const span=document.createElement("span");span.textContent="five minds.";h.appendChild(span);
- const p=document.createElement("p");p.textContent="Meet The Maker — your AI Squad coordinator. Four specialists think in parallel, then The Maker brings their ideas together into one answer.";
+ const h=document.createElement("h1");h.append("One chat. ");const span=document.createElement("span");span.textContent="four specialists.";h.appendChild(span);
+ const p=document.createElement("p");p.textContent="Choose your specialists. They work in parallel, and Combinze brings their responses together in one place.";
  const suggestions=document.createElement("div");suggestions.className="suggestions";
  [["🧠","Help me think through an idea","Explore options and make a clear plan."],["🎨","Create something original","Brainstorm concepts and creative directions."],["🔎","Research a topic","Break down a question and find what matters."],["🛠️","Help me build a project","Turn an idea into practical next steps."]].forEach(s=>{
   const b=document.createElement("button");b.className="suggestion";b.type="button";const strong=document.createElement("b");strong.textContent=s[0]+" "+s[1];const small=document.createElement("span");small.textContent=s[2];b.append(strong,small);b.addEventListener("click",()=>{input.value=s[1];resizeInput();input.focus()});suggestions.appendChild(b);
@@ -314,8 +314,8 @@ async function sendMessage(raw){
   }));
   contributions=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
   if(!contributions.length)throw new Error("All selected agents failed: "+results.map((x,i)=>x.status==="rejected"?squad[i]+": "+x.reason.message:"").filter(Boolean).join(" | "));
-  reply=contributions.map(x=>AGENTS[x.agent].emoji+" "+AGENTS[x.agent].name+"\\n"+x.reply).join("\\n\\n");
-  if(contributions.length<squad.length)reply+="\\n\\n(Some selected agents didn't respond.)";
+  reply=contributions.map(x=>AGENTS[x.agent].emoji+" "+AGENTS[x.agent].name+"\n"+x.reply).join("\n\n");
+  if(contributions.length<squad.length)reply+="\n\n(Some selected agents didn't respond.)";
   c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions,at:Date.now()});
   c.updatedAt=Date.now();persist();pending.remove();renderAll();
  }catch(err){
