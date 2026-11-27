@@ -263,7 +263,7 @@ function addTurn(m){
  const body=document.createElement("div");body.className="turn-body";
  const name=document.createElement("div");name.className="turn-name";name.textContent=m.role==="user"?"YOU":((AGENTS[m.agent]||AGENTS.maker).emoji+" "+(AGENTS[m.agent]||AGENTS.maker).name).toUpperCase();
  const text=document.createElement("div");text.className="turn-text";renderRichText(text,m.content||"");
- body.append(name,text);
+ body.append(name,text);if(m.image){const pic=document.createElement("img");pic.className="generated-image";pic.src=m.image;pic.alt="AI-generated image";body.appendChild(pic);}
  if(m.role==="assistant"&&m.contributions&&m.contributions.length){
   const details=document.createElement("details");details.className="turn-tools";const summary=document.createElement("summary");summary.className="tiny-btn";summary.textContent="See specialist contributions";details.appendChild(summary);
   m.contributions.forEach(c=>{const part=document.createElement("div");part.style.cssText="font-size:12px;line-height:1.6;color:#9da9bd;margin-top:10px;white-space:pre-wrap";part.textContent=(c.name||c.agent||"Specialist")+": "+(c.reply||c.error||"No response");details.appendChild(part)});body.appendChild(details);
