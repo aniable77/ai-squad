@@ -180,7 +180,8 @@ const AGENT_API_URL="https://combinze-agent-router.reedyjhaddon.workers.dev/chat
 const STORAGE_KEY="combinze_ai_squad_chats_v2";
 const app=document.getElementById("app"),chatList=document.getElementById("chatList"),messagesEl=document.getElementById("messages"),input=document.getElementById("userInput"),form=document.getElementById("chatForm"),sendBtn=document.getElementById("sendBtn"),currentTitle=document.getElementById("currentTitle");
 let chats=loadChats(),activeId=null,busy=false;
-const agentSelect=document.getElementById("agentSelect");\nconst AGENTS={maker:{name:"The Maker",emoji:"✦",prompt:"You are The Maker, coordinating the full AI Squad."},thinker:{name:"Thinker",emoji:"🧠",prompt:"Take the lead as Thinker. Focus on careful reasoning, logic, and clear explanations. Give the user a direct answer in Thinker’s voice."},creator:{name:"Creator",emoji:"🎨",prompt:"Take the lead as Creator. Focus on imagination, writing, concepts, and original creative ideas. Give the user a direct answer in Creator’s voice."},researcher:{name:"Researcher",emoji:"🔎",prompt:"Take the lead as Researcher. Focus on evidence, accuracy, structured investigation, and clearly noting uncertainty. Give the user a direct answer in Researcher’s voice."},builder:{name:"Builder",emoji:"🛠️",prompt:"Take the lead as Builder. Focus on practical implementation, coding, debugging, and step-by-step project work. Give the user a direct answer in Builder’s voice."}};
+const agentSelect=document.getElementById("agentSelect");
+const AGENTS={maker:{name:"The Maker",emoji:"✦",prompt:"You are The Maker, coordinating the full AI Squad."},thinker:{name:"Thinker",emoji:"🧠",prompt:"Take the lead as Thinker. Focus on careful reasoning, logic, and clear explanations. Give the user a direct answer in Thinker’s voice."},creator:{name:"Creator",emoji:"🎨",prompt:"Take the lead as Creator. Focus on imagination, writing, concepts, and original creative ideas. Give the user a direct answer in Creator’s voice."},researcher:{name:"Researcher",emoji:"🔎",prompt:"Take the lead as Researcher. Focus on evidence, accuracy, structured investigation, and clearly noting uncertainty. Give the user a direct answer in Researcher’s voice."},builder:{name:"Builder",emoji:"🛠️",prompt:"Take the lead as Builder. Focus on practical implementation, coding, debugging, and step-by-step project work. Give the user a direct answer in Builder’s voice."}};
 function id(){return "c_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}
 function loadChats(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");if(Array.isArray(x))return x.filter(c=>c&&typeof c.id==="string"&&Array.isArray(c.messages)).slice(0,100)}catch(e){}return []}
 function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(chats.slice(0,100)))}catch(e){showStorageNotice()}}
@@ -288,13 +289,28 @@ async function sendMessage(raw){
  const dots=document.createElement("div");dots.className="thinking-dots";for(let i=0;i<3;i++)dots.appendChild(document.createElement("i"));
  avatar.textContent=agent.emoji;body.append(name,status,dots);pending.append(avatar,body);messagesEl.appendChild(pending);scrollBottom();
  try{
-  const endpoint=c.agent==="maker"?MAKER_API_URL:AGENT_API_URL;
-  const payload=c.agent==="maker"?{message:value,context:buildContext({...c,messages:c.messages.slice(0,-1)})}:{agent:c.agent,message:value,context:buildContext({...c,messages:c.messages.slice(0,-1)})};
-  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload)});
-  let data;try{data=await response.json()}catch(e){throw new Error("The Maker returned an unreadable response.")}
-  if(!response.ok)throw new Error(data.error||"The squad couldn't complete that request.");
-  const reply=typeof data.reply==="string"&&data.reply.trim()?data.reply.trim():agent.name+" didn't return a final answer.";
-  c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions:Array.isArray(data.contributions)?data.contributions:[],at:Date.now()});
+  const context=buildContext({...c,messages:c.messages.slice(0,-1)});
+  let reply="",contributions=[];
+  if(c.agent==="maker"){
+   const squad=["thinker","creator","researcher","builder"];
+   const results=await Promise.allSettled(squad.map(async key=>{
+    const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({agent:key,message:value,context})});
+    let data;try{data=await response.json()}catch(e){throw new Error(key+" returned unreadable data")}
+    if(!response.ok)throw new Error(data.error||key+" HTTP "+response.status);
+    if(typeof data.reply!=="string"||!data.reply.trim())throw new Error(key+" returned an empty reply");
+    return {agent:key,reply:data.reply.trim()};
+   }));
+   contributions=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
+   if(!contributions.length)throw new Error("All four agents failed: "+results.map((x,i)=>x.status==="rejected"?squad[i]+": "+x.reason.message:"").filter(Boolean).join(" | "));
+   reply=contributions.map(x=>AGENTS[x.agent].emoji+" "+AGENTS[x.agent].name+"\n"+x.reply).join("\n\n");
+   if(contributions.length<4)reply+="\n\n(Some specialists didn't respond.)";
+  }else{
+   const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({agent:c.agent,message:value,context})});
+   let data;try{data=await response.json()}catch(e){throw new Error(agent.name+" returned unreadable data")}
+   if(!response.ok)throw new Error(data.error||agent.name+" HTTP "+response.status);
+   reply=typeof data.reply==="string"&&data.reply.trim()?data.reply.trim():agent.name+" didn't return a final answer.";
+  }
+  c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions,at:Date.now()});
   c.updatedAt=Date.now();persist();pending.remove();renderAll();
  }catch(err){
   status.classList.add("error");status.textContent="Couldn't reach "+agent.name+": "+(err&&err.message?err.message:"Unknown error");
