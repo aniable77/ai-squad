@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b12">
+<title>Combinze Admin</title>
+<style>
+:root{color-scheme:dark;--bg:#090b12;--panel:#121724;--line:#293247;--text:#f2f5ff;--muted:#9aa5bc;--purple:#a58bff;--green:#70e0b2;--red:#ff8798}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 70% -10%,#51428a55,transparent 45%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,sans-serif;padding:24px}
+main{max-width:900px;margin:0 auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0 28px}.brand{font-weight:900;letter-spacing:.14em}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:linear-gradient(145deg,#151c2b,#101521);border:1px solid var(--line);border-radius:17px;padding:19px}.card h2{font-size:14px;margin:0 0 14px;color:#c9c1ff}.value{font-size:21px;font-weight:750}.muted{color:var(--muted);font-size:13px;line-height:1.5}.status{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:8px}.status.off{background:var(--red)}button,a.btn{border:1px solid #51477d;background:#201c37;color:white;border-radius:10px;padding:10px 14px;text-decoration:none;cursor:pointer;font:inherit}.notice{margin-top:16px;border:1px solid #5a4b85;background:#1c1830;padding:14px;border-radius:12px;color:#d8d0ff;font-size:13px;line-height:1.5}#state{margin:14px 0;color:var(--muted)}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div><div class="brand">COMBINZE <span style="color:var(--purple)">/ ADMIN</span></div><div class="sub">Private control center</div></div><div><a class="btn" href="./">Open Combinze</a> <button id="refresh">Refresh</button></div></div>
+<div id="state">Checking your signed-in account…</div>
+<section id="dashboard" class="hidden">
+<div class="grid">
+<article class="card"><h2>ADMIN ACCOUNT</h2><div class="value" id="email">Verified</div><div class="muted">Authorized account only</div></article>
+<article class="card"><h2>AGENT ROUTER</h2><div class="value"><span class="status"></span>Online</div><div class="muted">Admin API responded successfully</div></article>
+<article class="card"><h2>AI SERVICE</h2><div class="value" id="ai">Checking…</div><div class="muted">Cloudflare AI binding</div></article>
+<article class="card"><h2>REQUEST PROTECTION</h2><div class="value" id="limits">Checking…</div><div class="muted">Chat and image rate-limit bindings</div></article>
+</div>
+<div class="notice" id="notice"></div>
+</section>
+<div id="denied" class="hidden card"><h2>Access unavailable</h2><p class="muted" id="deniedText">This account is not authorized.</p></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://xijmhboevhtjqlirdsoc.supabase.co";
+const SUPABASE_KEY="sb_publishable_gIJWfjFpcTjwjDSmKiy3-Q_zqsMbJA-";
+const ROUTER="https://combinze-agent-router.reedyjhaddon.workers.dev";
+const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const state=document.getElementById("state"),dash=document.getElementById("dashboard"),denied=document.getElementById("denied");
+async function load(){
+ state.textContent="Verifying admin access…";dash.classList.add("hidden");denied.classList.add("hidden");
+ const {data,error}=await client.auth.getSession();
+ if(error||!data.session){state.textContent="Sign in to Combinze first, then return here.";denied.classList.remove("hidden");document.getElementById("deniedText").textContent="No active Combinze session was found. Open Combinze, sign in to your account, and revisit /admin.html.";return}
+ try{
+ const response=await fetch(ROUTER+"/admin/overview",{headers:{Authorization:"Bearer "+data.session.access_token}});
+ const result=await response.json();
+ if(!response.ok){state.textContent="";denied.classList.remove("hidden");document.getElementById("deniedText").textContent=result.error||"Admin access denied.";return}
+ document.getElementById("email").textContent=result.email||"Verified account";
+ document.getElementById("ai").textContent=result.services.ai?"Available":"Unavailable";
+ document.getElementById("limits").textContent=result.services.chatRateLimit&&result.services.imageRateLimit?"Active":"Incomplete";
+ document.getElementById("notice").textContent=result.notice;
+ state.textContent="Admin access verified.";dash.classList.remove("hidden");
+ }catch(e){state.textContent="Could not reach the admin service. Try again.";denied.classList.remove("hidden");document.getElementById("deniedText").textContent="The admin service could not be reached."}
+}
+document.getElementById("refresh").addEventListener("click",load);
+load();
+</script>
+</body>
+</html>
