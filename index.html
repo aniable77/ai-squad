@@ -220,7 +220,7 @@ async function sendMessage(raw){
  const dots=document.createElement("div");dots.className="thinking-dots";for(let i=0;i<3;i++)dots.appendChild(document.createElement("i"));
  body.append(name,status,dots);pending.append(avatar,body);messagesEl.appendChild(pending);scrollBottom();
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:value,context:buildContext({...c,messages:c.messages.slice(0,-1)})})});
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({message:value,context:buildContext({...c,messages:c.messages.slice(0,-1)})})});
   let data;try{data=await response.json()}catch(e){throw new Error("The Maker returned an unreadable response.")}
   if(!response.ok)throw new Error(data.error||"The squad couldn't complete that request.");
   const reply=typeof data.reply==="string"&&data.reply.trim()?data.reply.trim():"The Maker didn't return a final answer.";
