@@ -170,6 +170,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 /* Living squad wallpaper */
 .main{isolation:isolate;overflow:hidden}
+.main:has(.messages .turn) .squad-wallpaper{opacity:0;visibility:hidden;transition:opacity .7s ease,visibility .7s ease}
+.main:has(.messages .welcome) .squad-wallpaper{opacity:1;visibility:visible}
+@media(max-width:760px){.top-tag{display:none}.current-title{max-width:42vw}.topbar{padding-left:12px;padding-right:12px}.top-left,.top-right{gap:7px}}
 .squad-wallpaper{position:absolute;inset:66px 0 0;z-index:-1;pointer-events:none;overflow:hidden;--mix-a:rgba(143,112,255,.24);--mix-b:rgba(89,174,255,.2);--mix-c:rgba(75,220,190,.12);background:radial-gradient(ellipse at 50% 18%,var(--mix-a),transparent 34%),radial-gradient(ellipse at 78% 40%,var(--mix-b),transparent 35%),radial-gradient(ellipse at 20% 70%,var(--mix-c),transparent 36%);transition:background 1.8s ease}
 .squad-wallpaper:before,.squad-wallpaper:after{content:"";position:absolute;width:min(58vw,560px);aspect-ratio:1;border-radius:50%;left:50%;top:38%;transform:translate(-50%,-50%);border:1px solid rgba(186,174,255,.11);box-shadow:0 0 90px var(--mix-a),inset 0 0 90px rgba(100,145,255,.05);transition:all 1.8s ease}
 .squad-wallpaper:after{width:min(76vw,740px);border-style:dashed;opacity:.45;animation:orbitDrift 90s linear infinite}
@@ -432,8 +435,20 @@ async function sendMessage(raw){
   }));
   contributions=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
   if(!contributions.length)throw new Error("All selected agents failed: "+results.map((x,i)=>x.status==="rejected"?squad[i]+": "+x.reason.message:"").filter(Boolean).join(" | "));
-  reply=contributions.map(x=>x.reply).join("\n\n");
-  if(contributions.length<squad.length)reply+="\n\n(Some selected agents didn't respond.)";
+  if(makerMode){
+   statusText.textContent="The Maker is combining the specialists' work…";
+   const synthesisPrompt="Create one polished, unified answer for the user. You are The Maker, combining the useful conclusions from your four specialists. Do not introduce yourself or list the specialists. Remove repeated greetings and duplicated explanations. Resolve overlaps, preserve useful specifics, and clearly mention uncertainty or missing information. Answer the user's original request directly.\n\nOriginal user request: "+value+"\n\nThinker contribution:\n"+(contributions.find(x=>x.agent==="thinker")?.reply||"No response")+
+    "\n\nCreator contribution:\n"+(contributions.find(x=>x.agent==="creator")?.reply||"No response")+
+    "\n\nResearcher contribution:\n"+(contributions.find(x=>x.agent==="researcher")?.reply||"No response")+
+    "\n\nBuilder contribution:\n"+(contributions.find(x=>x.agent==="builder")?.reply||"No response");
+   const finalResponse=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({agent:"thinker",message:synthesisPrompt,context:"You are preparing the final unified response for Combinze's optional Maker mode. Do not identify yourself as Thinker. Do not invent facts or claim actions were completed." ,thinking:thinkHarder})});
+   const finalData=await finalResponse.json();
+   if(!finalResponse.ok||typeof finalData.reply!=="string"||!finalData.reply.trim())throw new Error("The Maker couldn't combine the specialist responses");
+   reply=finalData.reply.trim();
+  }else{
+   reply=contributions.map(x=>x.reply).join("\n\n");
+  }
+  if(contributions.length<squad.length)reply+="\n\n(Some selected specialists didn't respond.)";
   const aiTitle=await titlePromise;if(needsAiTitle&&aiTitle)c.title=aiTitle;
   c.messages.push({role:"assistant",agent:c.agent,content:reply,contributions,at:Date.now()});
   c.updatedAt=Date.now();persist();pending.remove();currentTitle.textContent=c.title;renderList();await typeAssistantMessage(c.messages[c.messages.length-1]);
