@@ -23,6 +23,16 @@ main{max-width:900px;margin:0 auto}.top{display:flex;justify-content:space-betwe
 <article class="card"><h2>AI SERVICE</h2><div class="value" id="ai">Checking…</div><div class="muted">Cloudflare AI binding</div></article>
 <article class="card"><h2>REQUEST PROTECTION</h2><div class="value" id="limits">Checking…</div><div class="muted">Chat and image rate-limit bindings</div></article>
 </div>
+<article class="card" style="margin-top:14px;border-color:#7c3947">
+<h2 style="color:#ff9aaa">EMERGENCY CONTROLS</h2>
+<div class="value" id="shutdownState">Checking…</div>
+<div class="muted" id="shutdownHelp">Stops new AI chat and image-generation requests. The website and this dashboard remain available.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+<button id="shutdownBtn" style="background:#4a1c29;border-color:#a64b60">Emergency Shutdown</button>
+<button id="restoreBtn" style="background:#173b30;border-color:#347d62">Restore Services</button>
+</div>
+<div class="muted" id="shutdownMessage" style="margin-top:10px"></div>
+</article>
 <div class="notice" id="notice"></div>
 </section>
 <div id="denied" class="hidden card"><h2>Access unavailable</h2><p class="muted" id="deniedText">This account is not authorized.</p></div>
@@ -34,6 +44,35 @@ const SUPABASE_KEY="sb_publishable_gIJWfjFpcTjwjDSmKiy3-Q_zqsMbJA-";
 const ROUTER="https://combinze-agent-router.reedyjhaddon.workers.dev";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const state=document.getElementById("state"),dash=document.getElementById("dashboard"),denied=document.getElementById("denied");
+let currentSession=null;
+async function loadShutdown(){
+ const status=document.getElementById("shutdownState"),msg=document.getElementById("shutdownMessage");
+ status.textContent="Checking…";msg.textContent="";
+ try{
+  const r=await fetch(SUPABASE_URL+"/rest/v1/app_control?id=eq.true&select=emergency_shutdown",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+currentSession.access_token}});
+  if(!r.ok)throw new Error("Could not read service status ("+r.status+")");
+  const rows=await r.json();if(!Array.isArray(rows)||!rows.length)throw new Error("Emergency control record is missing");
+  const down=rows[0].emergency_shutdown;
+  status.innerHTML=down?'<span style="color:#ff8798">● SHUT DOWN</span>':'<span style="color:#70e0b2">● SERVICES ONLINE</span>';
+  document.getElementById("shutdownBtn").disabled=down;
+  document.getElementById("restoreBtn").disabled=!down;
+ }catch(e){status.textContent="Status unavailable";msg.textContent=e.message;document.getElementById("shutdownBtn").disabled=true;document.getElementById("restoreBtn").disabled=true}
+}
+async function setShutdown(value){
+ const msg=document.getElementById("shutdownMessage");
+ const prompt=value?"Shut down Combinze AI chat and image generation now? The website and Admin Dashboard will remain online.":"Restore Combinze AI chat and image generation?";
+ if(!window.confirm(prompt))return;
+ document.getElementById("shutdownBtn").disabled=true;document.getElementById("restoreBtn").disabled=true;msg.textContent="Updating service status…";
+ try{
+  const r=await fetch(SUPABASE_URL+"/rest/v1/app_control?id=eq.true",{method:"PATCH",headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+currentSession.access_token,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({emergency_shutdown:value,updated_at:new Date().toISOString()})});
+  if(!r.ok)throw new Error("Update rejected ("+r.status+"). Your admin permission may need checking.");
+  const rows=await r.json();if(!Array.isArray(rows)||!rows.length)throw new Error("No row was updated. Check admin permissions.");
+  msg.textContent=value?"Emergency shutdown activated.":"Services restored.";
+  await loadShutdown();
+ }catch(e){msg.textContent="Could not change service status: "+e.message;await loadShutdown()}
+}
+document.getElementById("shutdownBtn").addEventListener("click",()=>setShutdown(true));
+document.getElementById("restoreBtn").addEventListener("click",()=>setShutdown(false));
 async function load(){
  state.textContent="Verifying admin access…";dash.classList.add("hidden");denied.classList.add("hidden");
  const {data,error}=await client.auth.getSession();
@@ -46,7 +85,7 @@ async function load(){
  document.getElementById("ai").textContent=result.services.ai?"Available":"Unavailable";
  document.getElementById("limits").textContent=result.services.chatRateLimit&&result.services.imageRateLimit?"Active":"Incomplete";
  document.getElementById("notice").textContent=result.notice;
- state.textContent="Admin access verified.";dash.classList.remove("hidden");
+ state.textContent="Admin access verified.";dash.classList.remove("hidden");await loadShutdown();
  }catch(e){state.textContent="Could not reach the admin service. Try again.";denied.classList.remove("hidden");document.getElementById("deniedText").textContent="The admin service could not be reached."}
 }
 document.getElementById("refresh").addEventListener("click",load);
