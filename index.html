@@ -456,11 +456,23 @@ function openMenu(){app.classList.add("menu-open")}
 function resizeInput(){input.style.height="auto";input.style.height=Math.min(input.scrollHeight,180)+"px"}
 function setBusy(v){busy=v;sendBtn.disabled=v;input.disabled=v;sendBtn.textContent=v?"…":"➤"}
 function buildContext(c){return c.messages.slice(-12).map(m=>(m.role==="user"?"User":"The Maker")+": "+m.content).join("\n\n").slice(-7500)}
+async function planMakerAgents(message,context){
+ const prompt="Choose the smallest useful set of Combinze specialists for this request. Available specialists: thinker (reasoning and evaluation), creator (creative concepts and writing), researcher (factual research and uncertainty), builder (coding and implementation). Select only specialists that add real value; use multiple for genuinely multi-disciplinary requests. Return ONLY valid JSON in this exact shape: {\\"agents\\":[\\"thinker\\",\\"builder\\"]}. No prose or markdown.\nUser request: "+message;
+ try{
+  const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8",...(await authHeaders())},body:JSON.stringify({agent:"thinker",message:prompt,context:"",thinking:false})});
+  const data=await response.json();if(!response.ok||typeof data.reply!=="string")throw new Error("Planner unavailable");
+  const match=data.reply.match(/\\{[\\s\\S]*\\}/);if(!match)throw new Error("Planner returned invalid JSON");
+  const parsed=JSON.parse(match[0]),allowed=["thinker","creator","researcher","builder"];
+  const chosen=[...new Set((Array.isArray(parsed.agents)?parsed.agents:[]).filter(x=>allowed.includes(x)))];
+  if(!chosen.length)throw new Error("Planner selected no specialists");
+  return chosen;
+ }catch(e){console.warn("Maker planning fallback:",e);return ["thinker","creator","researcher","builder"]}
+}
 async function sendMessage(raw){
  const value=raw.trim();if(!value||busy)return;
  if(!activeChat())makeChat();
  const c=activeChat();if(!c)return;
- const chosen=selectedAgents();if(!chosen.length){statusAgentHint();return;}c.agents=chosen;c.makerMode=makerMode;c.agent=makerMode?"maker":chosen.length===1?chosen[0]:"squad";const agent=makerMode?AGENTS.maker:chosen.length===1?AGENTS[chosen[0]]:AGENTS.squad;
+ const chosen=selectedAgents();if(!chosen.length&&!makerMode){statusAgentHint();return;}c.agents=chosen;c.makerMode=makerMode;c.agent=makerMode?"maker":chosen.length===1?chosen[0]:"squad";const agent=makerMode?AGENTS.maker:chosen.length===1?AGENTS[chosen[0]]:AGENTS.squad;
  c.messages.push({role:"user",content:value,at:Date.now()});
  const needsAiTitle=c.messages.length===1;if(c.title==="New chat")c.title=titleFrom(value);
  c.updatedAt=Date.now();chats.sort((a,b)=>b.updatedAt-a.updatedAt);persist();renderAll();
@@ -469,15 +481,16 @@ async function sendMessage(raw){
  const avatar=document.createElement("div");avatar.className="turn-avatar";avatar.textContent="✦";
  const body=document.createElement("div");body.className="turn-body";
  const name=document.createElement("div");name.className="turn-name";name.textContent=(agent.emoji+" "+agent.name).toUpperCase();
- const status=document.createElement("div");status.className="typing-label pending-glow";const orb=document.createElement("span");orb.className="typing-orb";const statusText=document.createElement("span");statusText.textContent=chosen.length===1?agent.name+" is responding":chosen.length+" agents are collaborating";status.append(orb,statusText);
+ const status=document.createElement("div");status.className="typing-label pending-glow";const orb=document.createElement("span");orb.className="typing-orb";const statusText=document.createElement("span");statusText.textContent=makerMode?"Maker is planning the best team…":chosen.length===1?agent.name+" is responding":chosen.length+" agents are collaborating";status.append(orb,statusText);
  const dots=document.createElement("div");dots.className="thinking-dots";for(let i=0;i<3;i++)dots.appendChild(document.createElement("i"));
  avatar.textContent=agent.emoji;body.append(name,status,dots);pending.append(avatar,body);messagesEl.appendChild(pending);scrollBottom();
  try{
   const context=buildContext({...c,messages:c.messages.slice(0,-1)});
   const titlePromise=needsAiTitle?generateChatTitle(value):Promise.resolve(null);
   let reply="",contributions=[];
-  const squad=chosen;
+  const squad=makerMode?await planMakerAgents(value,context):chosen;
   let completed=0;
+  if(makerMode)statusText.textContent="Maker selected "+squad.length+" specialist"+(squad.length===1?"":"s")+"…";
   const results=await Promise.allSettled(squad.map(async key=>{
    const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8",...(await authHeaders())},body:JSON.stringify({agent:key,message:value,context,thinking:thinkHarder})});
    let data;try{data=await response.json()}catch(e){throw new Error(key+" returned unreadable data")}
@@ -491,11 +504,8 @@ async function sendMessage(raw){
   if(!contributions.length)throw new Error("All selected agents failed: "+results.map((x,i)=>x.status==="rejected"?squad[i]+": "+x.reason.message:"").filter(Boolean).join(" | "));
   if(makerMode){
    statusText.textContent="The Maker is combining the specialists' work…";
-   const synthesisPrompt="Create one polished, unified answer for the user. You are The Maker, combining the useful conclusions from your four specialists. Do not introduce yourself or list the specialists. Remove repeated greetings and duplicated explanations. Resolve overlaps, preserve useful specifics, and clearly mention uncertainty or missing information. Answer the user's original request directly.\n\nOriginal user request: "+value+"\n\nThinker contribution:\n"+(contributions.find(x=>x.agent==="thinker")?.reply||"No response")+
-    "\n\nCreator contribution:\n"+(contributions.find(x=>x.agent==="creator")?.reply||"No response")+
-    "\n\nResearcher contribution:\n"+(contributions.find(x=>x.agent==="researcher")?.reply||"No response")+
-    "\n\nBuilder contribution:\n"+(contributions.find(x=>x.agent==="builder")?.reply||"No response");
-   const finalResponse=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8",...(await authHeaders())},body:JSON.stringify({agent:"thinker",message:synthesisPrompt,context:"You are preparing the final unified response for Combinze's optional Maker mode. Do not identify yourself as Thinker. Do not invent facts or claim actions were completed." ,thinking:thinkHarder})});
+   const synthesisPrompt="Synthesize the selected specialists' contributions into one polished, unified answer. Do not introduce yourself or list the specialists unless useful. Remove repetition, resolve overlaps, preserve concrete details, and clearly state uncertainty or missing information. Answer the original request directly.\n\nOriginal user request: "+value+"\n\n"+contributions.map(x=>x.agent.toUpperCase()+" contribution:\n"+x.reply).join("\n\n");
+   const finalResponse=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8",...(await authHeaders())},body:JSON.stringify({agent:"thinker",message:synthesisPrompt,context:"You are the Thinker specialist preparing a unified synthesis of other specialist contributions for Combinze Maker mode. Maintain your Thinker identity; do not claim to be another agent. Do not invent facts or claim actions were completed.",thinking:thinkHarder})});
    const finalData=await finalResponse.json();
    if(!finalResponse.ok||typeof finalData.reply!=="string"||!finalData.reply.trim())throw new Error("The Maker couldn't combine the specialist responses");
    reply=finalData.reply.trim();
