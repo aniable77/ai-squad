@@ -192,6 +192,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .messages:has(.turn)~.composer-wrap{position:relative;z-index:1}
 @media(max-width:760px){.squad-wallpaper{inset:56px 0 0}.squad-wallpaper .wallpaper-core{top:31%;width:158px}.squad-wallpaper:before{top:31%;width:260px}.squad-wallpaper:after{top:31%;width:340px}.wallpaper-agent{top:31%;margin:-22px}.wallpaper-agent[data-agent="thinker"]{--y:-190px}.wallpaper-agent[data-agent="creator"]{--x:145px}.wallpaper-agent[data-agent="researcher"]{--y:190px}.wallpaper-agent[data-agent="builder"]{--x:-145px}}
 
+
+/* Respect the iPhone status-bar safe area in standalone mode */
+.sidebar{padding-top:calc(19px + env(safe-area-inset-top))}
+.topbar{height:calc(66px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
+.squad-wallpaper{inset:calc(66px + env(safe-area-inset-top)) 0 0}
+@media(max-width:760px){.squad-wallpaper{inset:calc(56px + env(safe-area-inset-top)) 0 0}}
+
 </style>
 </head>
 <body>
