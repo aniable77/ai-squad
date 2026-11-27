@@ -276,8 +276,8 @@ document.getElementById("googleAuth").addEventListener("click",async()=>{authErr
 authForm.addEventListener("submit",async e=>{e.preventDefault();authError.textContent="";authSubmit.disabled=true;authSubmit.textContent="Please wait…";const email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;let result;if(authMode==="signup")result=await authClient.auth.signUp({email,password});else result=await authClient.auth.signInWithPassword({email,password});authSubmit.disabled=false;authSubmit.textContent=authMode==="signup"?"Create account":"Log in";if(result.error){authError.textContent=result.error.message;return;}if(authMode==="signup"&&!result.data.session){authError.textContent="Check your email to confirm your account, then log in.";return;}showCombinze();});
 function showCombinze(){authScreen.hidden=true;document.getElementById("app").style.display="grid";const tag=document.querySelector(".top-tag");if(tag)tag.textContent=sessionStorage.getItem("combinze_guest_mode")==="1"?"● GUEST PREVIEW":"● SQUAD ONLINE";}
 document.getElementById("guestMode").addEventListener("click",()=>{sessionStorage.setItem("combinze_guest_mode","1");showCombinze();});
-(async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();syncCloudLibrary();}else if(sessionStorage.getItem("combinze_guest_mode")==="1")showCombinze();})();
-authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED")syncCloudLibrary();}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");setCloudSyncLabel("Browser only");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+(async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();syncCloudLibrary();syncCloudProjects();}else if(sessionStorage.getItem("combinze_guest_mode")==="1")showCombinze();})();
+authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){syncCloudLibrary();syncCloudProjects();}}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");setCloudSyncLabel("Browser only");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
 
 const MAKER_API_URL="https://combinze-maker.reedyjhaddon.workers.dev/chat";
 const AGENT_API_URL="https://combinze-agent-router.reedyjhaddon.workers.dev/chat";
@@ -304,6 +304,29 @@ const AGENTS={maker:{name:"The Maker",emoji:"✦",prompt:"You are The Maker, coo
 function id(){return "c_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}
 function loadChats(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");if(Array.isArray(x))return x.filter(c=>c&&typeof c.id==="string"&&Array.isArray(c.messages)).slice(0,100)}catch(e){}return []}
 let cloudSyncTimer=null,cloudSyncBusy=false,cloudSyncAgain=false,cloudSyncLabel="Browser only";
+let projectSyncBusy=false,projectSyncLabel="Browser only",projects=loadProjects();
+function loadProjects(){try{const x=JSON.parse(localStorage.getItem("combinze_projects")||"[]");return Array.isArray(x)?x.filter(p=>p&&typeof p.name==="string").slice(0,50):[]}catch(e){return []}}
+function persistProjects(){try{localStorage.setItem("combinze_projects",JSON.stringify(projects.slice(0,50)))}catch(e){showStorageNotice()}}
+async function syncCloudProjects(){
+ if(projectSyncBusy||sessionStorage.getItem("combinze_guest_mode")==="1")return;
+ projectSyncBusy=true;projectSyncLabel="Syncing…";
+ try{
+  const {data}=await authClient.auth.getSession();const token=data.session?.access_token;if(!token){projectSyncLabel="Browser only";return}
+  const user=await signedInUser();if(!user){projectSyncLabel="Browser only";return}
+  const r=await fetch(SUPABASE_URL+"/rest/v1/projects?select=id,name,description,created_at,updated_at&order=updated_at.desc",{headers:cloudHeaders(token)});
+  if(!r.ok)throw new Error("Cloud Projects unavailable ("+r.status+")");
+  const remote=await r.json(),byId=new Map(projects.map(p=>[p.id,p]));
+  for(const row of remote){const local=byId.get(row.id);const cloud={id:row.id,name:row.name,description:row.description||"",createdAt:Date.parse(row.created_at)||Date.now(),updatedAt:Date.parse(row.updated_at)||Date.now()};if(!local||cloud.updatedAt>Number(local.updatedAt||0))byId.set(row.id,cloud)}
+  projects=[...byId.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,50);persistProjects();
+  for(const p of projects){if(!p.id)continue;const body={id:p.id,user_id:user.id,name:p.name,description:p.description||"",created_at:new Date(p.createdAt||Date.now()).toISOString(),updated_at:new Date(p.updatedAt||Date.now()).toISOString()};const up=await fetch(SUPABASE_URL+"/rest/v1/projects?on_conflict=id",{method:"POST",headers:{...cloudHeaders(token),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(body)});if(!up.ok)throw new Error("Project save failed ("+up.status+")")}
+  projectSyncLabel="Cloud synced";
+ }catch(e){projectSyncLabel="Sync paused · "+(e.message||"try again")}
+ finally{projectSyncBusy=false}
+}
+async function saveProject(name){
+ const now=Date.now();const p={id:id(),name,description:"",createdAt:now,updatedAt:now};projects.unshift(p);projects=projects.slice(0,50);persistProjects();
+ if(sessionStorage.getItem("combinze_guest_mode")!=="1")await syncCloudProjects();
+}
 function setCloudSyncLabel(value){cloudSyncLabel=value;const n=document.getElementById("cloudSyncStatus");if(n)n.textContent=value}
 async function signedInUser(){const {data,error}=await authClient.auth.getUser();if(error)throw error;return data.user||null}
 function cloudHeaders(token){return {apikey:SUPABASE_KEY,Authorization:"Bearer "+token,"Content-Type":"application/json"}}
@@ -508,12 +531,13 @@ function openFeature(view){
   chats.forEach(c=>{const el=document.createElement("div");el.className="feature-row";const label=document.createElement("span");label.textContent=c.title||"New chat";const btn=document.createElement("button");btn.textContent="Open";btn.addEventListener("click",()=>{activeId=c.id;renderAll();featureModal.hidden=true;});el.append(label,btn);list.appendChild(el)});featureContent.appendChild(list);
   const cloud=document.createElement("div");cloud.className="feature-note";cloud.id="cloudSyncStatus";cloud.textContent=cloudSyncLabel;featureContent.appendChild(cloud);row("Cloud Library","Signed-in chats sync across devices","Sync now");featureContent.lastChild.querySelector("button").addEventListener("click",()=>syncCloudLibrary());note("Signed-in text chats sync securely. Guest chats stay on this device. Generated image files are kept locally and are not uploaded to the cloud Library.");
  }else if(view==="projects"){
-  p("Create a space for a project. Projects are saved locally in this browser for now.");
+  p("Create and organize projects. Signed-in projects sync to your Combinze account across devices.");
   const input=document.createElement("input");input.className="feature-input";input.placeholder="Project name";input.maxLength=60;input.id="projectNameInput";featureContent.appendChild(input);
-  const create=document.createElement("button");create.className="feature-primary";create.textContent="＋ Create project";create.addEventListener("click",()=>{const name=input.value.trim();if(!name)return;let items=[];try{items=JSON.parse(localStorage.getItem("combinze_projects")||"[]")}catch(e){}items.unshift({name,createdAt:Date.now()});localStorage.setItem("combinze_projects",JSON.stringify(items.slice(0,50)));openFeature("projects")});featureContent.appendChild(create);
-  let items=[];try{items=JSON.parse(localStorage.getItem("combinze_projects")||"[]")}catch(e){}
-  const list=document.createElement("div");list.className="feature-list";items.forEach(x=>{const el=document.createElement("div");el.className="feature-row";el.textContent="📁 "+x.name;list.appendChild(el)});featureContent.appendChild(list);
-  if(!items.length)note("Your projects will appear here.");
+  const create=document.createElement("button");create.className="feature-primary";create.textContent="＋ Create project";create.addEventListener("click",async()=>{const name=input.value.trim();if(!name)return;if(projects.some(x=>x.name.toLowerCase()===name.toLowerCase())){note("A project with that name already exists.");return;}create.disabled=true;await saveProject(name);openFeature("projects")});featureContent.appendChild(create);
+  const status=document.createElement("div");status.className="feature-note";status.textContent=projectSyncLabel;featureContent.appendChild(status);
+  const list=document.createElement("div");list.className="feature-list";projects.forEach(x=>{const el=document.createElement("div");el.className="feature-row";el.textContent="📁 "+x.name;list.appendChild(el)});featureContent.appendChild(list);
+  if(!projects.length)note("Your projects will appear here.");
+  note("Guest projects stay on this device. Sign in to sync projects privately through your account.");
   }else if(view==="settings"){
    p("Manage your Combinze account and workspace.");
    row("Account","Signed-in account or guest preview",{label:"View",run:async()=>{const {data,error}=await authClient.auth.getUser();const d=document.createElement("p");d.textContent=error?"Could not load account details.":data.user?.email||"You're using guest preview.";featureContent.appendChild(d)}});
