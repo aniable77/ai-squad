@@ -302,11 +302,14 @@ async function sendMessage(raw){
   const context=buildContext({...c,messages:c.messages.slice(0,-1)});
   let reply="",contributions=[];
   const squad=chosen;
+  let completed=0;
   const results=await Promise.allSettled(squad.map(async key=>{
    const response=await fetch(AGENT_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({agent:key,message:value,context})});
    let data;try{data=await response.json()}catch(e){throw new Error(key+" returned unreadable data")}
    if(!response.ok)throw new Error(data.error||key+" HTTP "+response.status);
    if(typeof data.reply!=="string"||!data.reply.trim())throw new Error(key+" returned an empty reply");
+   completed++;
+   statusText.textContent=completed+" of "+squad.length+" agents responded";
    return {agent:key,reply:data.reply.trim()};
   }));
   contributions=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
