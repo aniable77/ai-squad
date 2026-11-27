@@ -140,10 +140,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 }
 @media(max-width:390px){.content{padding:0 10px}.current-title{max-width:145px}.topbar{padding:0 9px}.top-right{gap:7px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Combinze welcome + authentication */
+.auth-screen{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% -10%,rgba(103,91,210,.24),transparent 48%),#080a11;display:grid;place-items:center;padding:24px;overflow:auto}.auth-card{width:min(100%,430px);padding:34px 26px;border:1px solid rgba(174,190,225,.14);border-radius:26px;background:rgba(18,23,36,.94);box-shadow:0 24px 90px #0008}.auth-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px}.auth-mark{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:25px;background:linear-gradient(145deg,#9d7bff,#4b9eff)}.auth-brand strong{font-size:19px;letter-spacing:.13em}.auth-card h1{text-align:center;font-size:30px;margin:0 0 10px}.auth-sub{text-align:center;color:var(--muted);line-height:1.55;margin:0 0 28px}.auth-action{width:100%;min-height:50px;border-radius:14px;border:1px solid var(--line);background:#20283a;color:var(--text);font-weight:700;cursor:pointer;margin-top:12px}.auth-action.primary{background:linear-gradient(110deg,#8065e9,#4c8fe8);border:0}.auth-field{width:100%;height:49px;margin-top:12px;padding:0 14px;border-radius:13px;border:1px solid var(--line);background:#0b0f19;color:var(--text)}.auth-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:20px 0}.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--line);flex:1}.auth-switch{display:flex;justify-content:center;gap:7px;color:var(--muted);font-size:13px;margin-top:20px}.auth-switch button{background:none;border:0;color:#b8a8ff;font-weight:700;cursor:pointer}.auth-note{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;margin-top:22px}.auth-error{color:#ff9aa8;font-size:13px;min-height:18px;margin-top:12px;text-align:center}.auth-screen[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<section class="auth-screen" id="authScreen"><div class="auth-card"><div class="auth-brand"><div class="auth-mark">✦</div><strong>COMBINZE</strong></div><h1 id="authHeading">Where should we begin?</h1><p class="auth-sub" id="authSub">One workspace. Many minds. Sign in to continue to your squad.</p><button class="auth-action primary" id="googleAuth">Continue with Google</button><div class="auth-divider">OR</div><form id="authForm"><input class="auth-field" id="authEmail" type="email" autocomplete="email" placeholder="Email address" required><input class="auth-field" id="authPassword" type="password" autocomplete="current-password" placeholder="Password (at least 6 characters)" minlength="6" required><button class="auth-action primary" id="authSubmit" type="submit">Continue</button></form><div class="auth-error" id="authError" role="status"></div><div class="auth-switch"><span id="authSwitchText">New to Combinze?</span><button id="authSwitch" type="button">Create account</button></div><p class="auth-note">By continuing, you agree to use Combinze responsibly. Your chats are associated with your account.</p></div></section>
+
+<div class="app" id="app" style="display:none">
  <div class="mobile-backdrop" id="backdrop"></div>
  <aside class="sidebar" aria-label="Chat navigation">
   <div class="brand"><div class="brand-mark">✦</div><div><div class="brand-name">COMBINZE</div><div class="brand-sub">ONE WORKSPACE. MANY MINDS.</div></div></div>
@@ -178,9 +183,24 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   </section>
  </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 "use strict";
+
+const SUPABASE_URL="https://xijmhboevhtjqlirdsoc.supabase.co";
+const SUPABASE_KEY="sb_publishable_gIJWfjFpcTjwjDSmKiy3-Q_zqsMbJA-";
+const authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const authScreen=document.getElementById("authScreen"),authForm=document.getElementById("authForm"),authHeading=document.getElementById("authHeading"),authSub=document.getElementById("authSub"),authSubmit=document.getElementById("authSubmit"),authSwitch=document.getElementById("authSwitch"),authSwitchText=document.getElementById("authSwitchText"),authError=document.getElementById("authError");
+let authMode="login";
+function setAuthMode(mode){authMode=mode;authHeading.textContent=mode==="signup"?"Create your Combinze account":"Welcome back";authSub.textContent=mode==="signup"?"Join your squad. Your workspace starts here.":"Sign in to continue to your Combinze workspace.";authSubmit.textContent=mode==="signup"?"Create account":"Log in";authSwitchText.textContent=mode==="signup"?"Already have an account?":"New to Combinze?";authSwitch.textContent=mode==="signup"?"Log in":"Create account";authError.textContent="";document.getElementById("authPassword").autocomplete=mode==="signup"?"new-password":"current-password";}
+authSwitch.addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
+document.getElementById("googleAuth").addEventListener("click",async()=>{authError.textContent="";const {error}=await authClient.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)authError.textContent=error.message;});
+authForm.addEventListener("submit",async e=>{e.preventDefault();authError.textContent="";authSubmit.disabled=true;authSubmit.textContent="Please wait…";const email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;let result;if(authMode==="signup")result=await authClient.auth.signUp({email,password});else result=await authClient.auth.signInWithPassword({email,password});authSubmit.disabled=false;authSubmit.textContent=authMode==="signup"?"Create account":"Log in";if(result.error){authError.textContent=result.error.message;return;}if(authMode==="signup"&&!result.data.session){authError.textContent="Check your email to confirm your account, then log in.";return;}showCombinze();});
+function showCombinze(){authScreen.hidden=true;document.getElementById("app").style.display="grid";}
+(async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session)showCombinze();})();
+authClient.auth.onAuthStateChange((event,session)=>{if(session)showCombinze();else if(event==="SIGNED_OUT"){document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+
 const MAKER_API_URL="https://combinze-maker.reedyjhaddon.workers.dev/chat";
 const AGENT_API_URL="https://combinze-agent-router.reedyjhaddon.workers.dev/chat";
 const STORAGE_KEY="combinze_ai_squad_chats_v2";
