@@ -410,7 +410,7 @@ footer {
     </form>
 
     <div class="note">
-      Chat interface preview — AI connections are not activated yet.
+      Powered by The Maker, working with your four AI specialists.
     </div>
   </section>
 
@@ -538,7 +538,7 @@ const messages = document.getElementById("messages");
 
 const sendButton = form.querySelector("button[type='submit']");
 
-const API_URL = "https://ai-squad-backend.reedyjhaddon.workers.dev/chat";
+const API_URL = "https://combinze-maker.reedyjhaddon.workers.dev/chat";
 
 
 form.addEventListener("submit", async event => {
@@ -552,82 +552,63 @@ form.addEventListener("submit", async event => {
   userBubble.textContent = value;
   messages.appendChild(userBubble);
 
-  const squad = [
-    { id: "thinker", name: "🧠 Thinker" },
-    { id: "creator", name: "🎨 Creator" },
-    { id: "researcher", name: "🔎 Researcher" },
-    { id: "builder", name: "🛠️ Builder" }
-  ];
-
   input.value = "";
   input.disabled = true;
   sendButton.disabled = true;
 
-  let discussion = "User's message: " + value;
+  const thinking = document.createElement("div");
+  thinking.className = "message system";
+  thinking.textContent = "✦ The Maker is bringing the squad together...";
+  messages.appendChild(thinking);
+  messages.scrollTop = messages.scrollHeight;
 
   try {
-    // Two rounds of squad discussion
-    for (let round = 1; round <= 2; round++) {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: value })
+    });
 
-      const heading = document.createElement("div");
-      heading.className = "message system";
-      heading.textContent = "💬 Squad Discussion — Round " + round;
-      messages.appendChild(heading);
-
-      for (const member of squad) {
-        const bubble = document.createElement("div");
-        bubble.className = "message system";
-        bubble.textContent = member.name + " is thinking...";
-        messages.appendChild(bubble);
-
-        messages.scrollTop = messages.scrollHeight;
-
-        try {
-          const prompt = discussion.slice(-900) +
-            "\n\nYou are " + member.name +
-            ". This is a conversation with three other AI teammates. " +
-            "React to their previous ideas, respectfully disagree if needed, " +
-            "and contribute something useful and original. " +
-            "Do not repeat the entire discussion.";
-
-          const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              agent: member.id,
-              message: prompt
-            })
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "Request failed");
-          }
-
-          const answer = data.reply ||
-            "I couldn't generate a response.";
-
-          bubble.textContent = member.name + "\n" + answer;
-
-          discussion += "\n\n" + member.name + ": " + answer;
-
-        } catch (error) {
-          bubble.textContent =
-            member.name + " couldn't respond: " + error.message;
-        }
-
-        messages.scrollTop = messages.scrollHeight;
-      }
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("The Maker returned an unreadable response.");
     }
 
-    const finished = document.createElement("div");
-    finished.className = "message system";
-    finished.textContent = "✨ Squad discussion complete!";
-    messages.appendChild(finished);
+    if (!response.ok) {
+      throw new Error(data.error || "The squad couldn't complete that request.");
+    }
 
+    thinking.textContent = "✦ The Maker";
+    thinking.textContent += "\n" + (data.reply || "The Maker didn't return a final answer.");
+
+    if (Array.isArray(data.contributions) && data.contributions.length) {
+      const details = document.createElement("details");
+      details.style.marginTop = "10px";
+      details.style.fontSize = "12px";
+      const summary = document.createElement("summary");
+      summary.textContent = "View specialist contributions (" +
+        (data.successfulAgents ?? data.contributions.length) + "/" +
+        (data.totalAgents ?? 4) + ")";
+      summary.style.cursor = "pointer";
+      details.appendChild(summary);
+
+      data.contributions.forEach(item => {
+        const contribution = document.createElement("div");
+        contribution.style.marginTop = "10px";
+        contribution.style.whiteSpace = "pre-wrap";
+        const name = item.name || item.agent || "Specialist";
+        const reply = item.reply || item.response || item.output || "";
+        contribution.textContent = name + "\n" + (reply || "No contribution returned.");
+        details.appendChild(contribution);
+      });
+
+      thinking.appendChild(details);
+    }
+
+  } catch (error) {
+    thinking.textContent = "⚠️ Couldn't reach The Maker: " + error.message;
   } finally {
     input.disabled = false;
     sendButton.disabled = false;
