@@ -225,7 +225,7 @@ async function sendMessage(raw){
   if(!response.ok)throw new Error(data.error||"The squad couldn't complete that request.");
   const reply=typeof data.reply==="string"&&data.reply.trim()?data.reply.trim():"The Maker didn't return a final answer.";
   c.messages.push({role:"assistant",content:reply,contributions:Array.isArray(data.contributions)?data.contributions:[],at:Date.now()});
-  c.updatedAt=Date.now();persist();pending.remove();addTurn(c.messages[c.messages.length-1]);renderList();currentTitle.textContent=c.title;
+  c.updatedAt=Date.now();persist();pending.remove();renderAll();
  }catch(err){
   status.classList.add("error");status.textContent="Couldn't reach The Maker: "+(err&&err.message?err.message:"Unknown error");
   dots.remove();
