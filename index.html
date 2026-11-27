@@ -144,6 +144,29 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 /* Combinze welcome + authentication */
 .auth-screen{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% -10%,rgba(103,91,210,.24),transparent 48%),#080a11;display:grid;place-items:center;padding:24px;overflow:auto}.auth-card{width:min(100%,430px);padding:34px 26px;border:1px solid rgba(174,190,225,.14);border-radius:26px;background:rgba(18,23,36,.94);box-shadow:0 24px 90px #0008}.auth-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px}.auth-mark{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:25px;background:linear-gradient(145deg,#9d7bff,#4b9eff)}.auth-brand strong{font-size:19px;letter-spacing:.13em}.auth-card h1{text-align:center;font-size:30px;margin:0 0 10px}.auth-sub{text-align:center;color:var(--muted);line-height:1.55;margin:0 0 28px}.auth-action{width:100%;min-height:50px;border-radius:14px;border:1px solid var(--line);background:#20283a;color:var(--text);font-weight:700;cursor:pointer;margin-top:12px}.auth-action.primary{background:linear-gradient(110deg,#8065e9,#4c8fe8);border:0}.auth-action.guest{background:linear-gradient(110deg,rgba(128,101,233,.16),rgba(76,143,232,.12));border-color:rgba(164,145,255,.45)}.auth-action.guest:hover{border-color:#a894ff;background:rgba(128,101,233,.24)}.auth-field{width:100%;height:49px;margin-top:12px;padding:0 14px;border-radius:13px;border:1px solid var(--line);background:#0b0f19;color:var(--text)}.auth-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:20px 0}.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--line);flex:1}.auth-switch{display:flex;justify-content:center;gap:7px;color:var(--muted);font-size:13px;margin-top:20px}.auth-switch button{background:none;border:0;color:#b8a8ff;font-weight:700;cursor:pointer}.auth-note{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;margin-top:22px}.auth-error{color:#ff9aa8;font-size:13px;min-height:18px;margin-top:12px;text-align:center}.auth-screen[hidden]{display:none!important}
+
+/* Workspace navigation and feature panels */
+.workspace-nav{display:grid;gap:5px;margin:18px 0 4px}
+.workspace-nav button{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border:1px solid transparent;border-radius:10px;background:transparent;color:#c7d0e2;text-align:left;font-size:13px;cursor:pointer}
+.workspace-nav button:hover,.workspace-nav button:focus-visible{background:#1a2130;border-color:var(--line);color:#fff}
+.workspace-nav .nav-icon{width:22px;text-align:center;font-size:16px}
+.workspace-nav .nav-caption{margin:9px 8px 3px;color:#78849a;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.settings-shortcut{margin-top:10px;width:100%;border:1px solid var(--line);background:#141b29;color:#d8e0ef;border-radius:10px;padding:10px;text-align:left;cursor:pointer}
+.feature-modal{position:fixed;inset:0;z-index:30;background:#03050bd9;display:grid;place-items:center;padding:18px}
+.feature-modal[hidden]{display:none}
+.feature-card{width:min(100%,620px);max-height:min(82dvh,760px);overflow:auto;background:#121927;border:1px solid #39445a;border-radius:19px;padding:22px;box-shadow:0 25px 90px #000b}
+.feature-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.feature-head h2{font-size:21px;margin:0}
+.feature-close{width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:#1c2535;color:#fff;font-size:20px;cursor:pointer}
+.feature-content{color:#c3cde0;font-size:13px;line-height:1.65}
+.feature-list{display:grid;gap:8px;margin-top:14px}
+.feature-row{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#171f2e}
+.feature-row button{margin-left:auto;border:1px solid #46516a;background:#222e42;color:#eaf0ff;border-radius:8px;padding:6px 9px;cursor:pointer}
+.feature-input{width:100%;border:1px solid #39445a;border-radius:10px;background:#0d1420;color:#fff;padding:11px;margin:8px 0}
+.feature-primary{border:0;border-radius:10px;padding:10px 14px;background:linear-gradient(110deg,#8466df,#438ed3);color:white;font-weight:750;cursor:pointer}
+.feature-note{font-size:11px;color:#8794aa;margin-top:12px}
+@media(max-width:760px){.workspace-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-nav button{font-size:12px;padding:9px 7px}.workspace-nav .nav-caption{grid-column:1/-1}}
+
 </style>
 </head>
 <body>
@@ -154,6 +177,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
  <aside class="sidebar" aria-label="Chat navigation">
   <div class="brand"><div class="brand-mark">✦</div><div><div class="brand-name">COMBINZE</div><div class="brand-sub">ONE WORKSPACE. MANY MINDS.</div></div></div>
   <button class="new-chat" id="newChat"><span>＋</span> New chat</button>
+  <nav class="workspace-nav" aria-label="Workspace">
+   <div class="nav-caption">Workspace</div>
+   <button type="button" data-view="scheduled"><span class="nav-icon">◷</span> Scheduled</button>
+   <button type="button" data-view="library"><span class="nav-icon">▤</span> Library</button>
+   <button type="button" data-view="customize"><span class="nav-icon">☷</span> Customize</button>
+   <button type="button" data-view="projects"><span class="nav-icon">▱</span> Projects</button>
+   <button type="button" data-view="plugins"><span class="nav-icon">⛭</span> Plugins</button>
+   <div class="nav-caption">More</div>
+   <button type="button" data-view="remote"><span class="nav-icon">▣</span> Remote</button>
+   <button type="button" data-view="health"><span class="nav-icon">♡</span> Health</button>
+   <button type="button" data-view="finances"><span class="nav-icon">$</span> Finances</button>
+   <button type="button" data-view="images"><span class="nav-icon">◉</span> Images</button>
+   <button type="button" data-view="settings"><span class="nav-icon">⚙</span> Settings</button>
+  </nav>
   <div class="side-label"><span>Your conversations</span><span id="chatCount">0</span></div>
   <input class="chat-search" id="chatSearch" type="search" placeholder="Search your chats..." aria-label="Search conversations">
   <nav class="chat-list" id="chatList" aria-label="Your conversations"></nav>
@@ -186,6 +223,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   </section>
  </main>
 </div>
+<div class="feature-modal" id="featureModal" hidden><section class="feature-card" role="dialog" aria-modal="true" aria-labelledby="featureTitle"><div class="feature-head"><h2 id="featureTitle">Workspace</h2><button class="feature-close" id="featureClose" type="button" aria-label="Close">×</button></div><div class="feature-content" id="featureContent"></div></section></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
@@ -375,6 +413,56 @@ input.addEventListener("input",resizeInput);
 input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
 document.getElementById("newChat").addEventListener("click",makeChat);
 document.getElementById("newChatTop").addEventListener("click",makeChat);
+const featureModal=document.getElementById("featureModal"),featureTitle=document.getElementById("featureTitle"),featureContent=document.getElementById("featureContent");
+function openFeature(view){
+ const names={scheduled:"Scheduled",library:"Library",customize:"Customize Combinze",projects:"Projects",plugins:"Plugins",remote:"Remote control",health:"Health",finances:"Finances",images:"Images",settings:"Settings"};
+ featureTitle.textContent=names[view]||"Workspace";featureContent.replaceChildren();
+ const p=(t)=>{const el=document.createElement("p");el.textContent=t;featureContent.appendChild(el);return el};
+ const note=(t)=>{const el=document.createElement("div");el.className="feature-note";el.textContent=t;featureContent.appendChild(el)};
+ const row=(label,detail,action)=>{const el=document.createElement("div");el.className="feature-row";const a=document.createElement("span");a.textContent=label;const b=document.createElement("small");b.textContent=detail; b.style.color="#8794aa";el.append(a,b);if(action){const btn=document.createElement("button");btn.type="button";btn.textContent=action.label;btn.addEventListener("click",action.run);el.appendChild(btn)}featureContent.appendChild(el)};
+ if(view==="library"){
+  p("Your conversations are stored in this browser. Open one to continue.");
+  const list=document.createElement("div");list.className="feature-list";
+  if(!chats.length)p("No conversations yet.");
+  chats.forEach(c=>{const el=document.createElement("div");el.className="feature-row";const label=document.createElement("span");label.textContent=c.title||"New chat";const btn=document.createElement("button");btn.textContent="Open";btn.addEventListener("click",()=>{activeId=c.id;renderAll();featureModal.hidden=true;});el.append(label,btn);list.appendChild(el)});featureContent.appendChild(list);
+  note("Library currently shows your saved chat history. File uploads and cross-device sync are not connected yet.");
+ }else if(view==="projects"){
+  p("Create a space for a project. Projects are saved locally in this browser for now.");
+  const input=document.createElement("input");input.className="feature-input";input.placeholder="Project name";input.maxLength=60;input.id="projectNameInput";featureContent.appendChild(input);
+  const create=document.createElement("button");create.className="feature-primary";create.textContent="＋ Create project";create.addEventListener("click",()=>{const name=input.value.trim();if(!name)return;let items=[];try{items=JSON.parse(localStorage.getItem("combinze_projects")||"[]")}catch(e){}items.unshift({name,createdAt:Date.now()});localStorage.setItem("combinze_projects",JSON.stringify(items.slice(0,50)));openFeature("projects")});featureContent.appendChild(create);
+  let items=[];try{items=JSON.parse(localStorage.getItem("combinze_projects")||"[]")}catch(e){}
+  const list=document.createElement("div");list.className="feature-list";items.forEach(x=>{const el=document.createElement("div");el.className="feature-row";el.textContent="📁 "+x.name;list.appendChild(el)});featureContent.appendChild(list);
+  if(!items.length)note("Your projects will appear here.");
+ }else if(view==="settings"){
+  p("Manage your Combinze workspace.");
+  row("Account","Sign-in status", "Account info");
+  row("Customize Combinze","Squad and appearance","Open"); 
+  row("General","Language and preferences","Coming soon");
+  row("Usage and limits","AI usage depends on available service limits","Info");
+  row("Notifications","Notification preferences","Coming soon");
+  row("Voice","Voice features are not connected yet","Coming soon");
+  row("Safety & wellbeing","Use Combinze thoughtfully","Info");
+  row("Security and login","Managed by your sign-in provider","Info");
+  row("Storage","Chats are stored in this browser","Info");
+  row("Data controls","Export or clear individual chats from chat options","Open");
+  note("Cloud backup, account-wide settings, and push notifications are not implemented yet.");
+ }else if(view==="customize"){
+  p("Choose which specialists you want to talk to. Your selection also controls the squad experience.");
+  const names=[["thinker","🧠 Thinker"],["creator","🎨 Creator"],["researcher","🔎 Researcher"],["builder","🛠️ Builder"]];
+  names.forEach(([key,label])=>{const el=document.createElement("label");el.className="feature-row";const cb=document.createElement("input");cb.type="checkbox";cb.checked=selectedAgents().includes(key);cb.addEventListener("change",()=>{const keys=selectedAgents();const next=cb.checked?[...keys,key]:keys.filter(x=>x!==key);setSelectedAgents(next);const c=activeChat();if(c){c.agents=next;c.agent=next.length===4?"maker":next.length===1?next[0]:"custom";persist()}});el.append(cb,document.createTextNode(label));featureContent.appendChild(el)});
+  note("The Maker is optional. Select all four specialists in the chat composer when you want the full squad to collaborate.");
+ }else{
+  const descriptions={scheduled:"Plan and schedule future tasks. Automated scheduling is not connected yet.",plugins:"Connect external tools and services. Plugin integrations are not connected yet.",remote:"Remote computer control is not available in this build.",health:"Health tools are not connected. This section is a placeholder, not a medical service.",finances:"Finance tools are not connected. No bank or payment accounts are linked.",images:"Create images from the Tools button in the chat composer. Your generated images appear in conversations."};
+  p(descriptions[view]||"This workspace feature is being prepared.");
+  if(view==="images"){const b=document.createElement("button");b.className="feature-primary";b.textContent="Open image creator";b.addEventListener("click",()=>{featureModal.hidden=true;document.getElementById("createImageTool").click()});featureContent.appendChild(b)}
+  note("This section is visible for navigation, but its full integration is not available yet.");
+ }
+ featureModal.hidden=false;
+}
+document.querySelectorAll(".workspace-nav [data-view]").forEach(b=>b.addEventListener("click",()=>openFeature(b.dataset.view)));
+document.getElementById("featureClose").addEventListener("click",()=>featureModal.hidden=true);
+featureModal.addEventListener("click",e=>{if(e.target===featureModal)featureModal.hidden=true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")featureModal.hidden=true});
 document.getElementById("menuBtn").addEventListener("click",openMenu);
 document.getElementById("backdrop").addEventListener("click",closeMenu);
 document.getElementById("chatSearch").addEventListener("input",renderList);
