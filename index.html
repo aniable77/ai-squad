@@ -225,6 +225,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
    <button type="button" data-view="finances"><span class="nav-icon">$</span> Finances</button>
    <button type="button" data-view="images"><span class="nav-icon">◉</span> Images</button>
    <button type="button" data-view="settings"><span class="nav-icon">⚙</span> Settings</button>
+   <button type="button" id="adminNav" data-view="admin" hidden><span class="nav-icon">🔐</span> Admin Dashboard</button>
   </nav>
   <div class="side-label"><span>Your conversations</span><span id="chatCount">0</span></div>
   <input class="chat-search" id="chatSearch" type="search" placeholder="Search your chats..." aria-label="Search conversations">
@@ -274,10 +275,19 @@ function setAuthMode(mode){authMode=mode;authHeading.textContent=mode==="signup"
 authSwitch.addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
 document.getElementById("googleAuth").addEventListener("click",async()=>{authError.textContent="";const {error}=await authClient.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)authError.textContent=error.message;});
 authForm.addEventListener("submit",async e=>{e.preventDefault();authError.textContent="";authSubmit.disabled=true;authSubmit.textContent="Please wait…";const email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;let result;if(authMode==="signup")result=await authClient.auth.signUp({email,password});else result=await authClient.auth.signInWithPassword({email,password});authSubmit.disabled=false;authSubmit.textContent=authMode==="signup"?"Create account":"Log in";if(result.error){authError.textContent=result.error.message;return;}if(authMode==="signup"&&!result.data.session){authError.textContent="Check your email to confirm your account, then log in.";return;}showCombinze();});
+async function refreshAdminAccess(){
+ const button=document.getElementById("adminNav");button.hidden=true;
+ if(sessionStorage.getItem("combinze_guest_mode")==="1")return;
+ try{
+  const {data}=await authClient.auth.getSession();const token=data.session?.access_token;if(!token)return;
+  const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/combinze_is_admin",{method:"POST",headers:cloudHeaders(token),body:"{}"});
+  if(r.ok&&await r.json()===true)button.hidden=false;
+ }catch(e){console.warn("Admin check unavailable")}
+}
 function showCombinze(){authScreen.hidden=true;document.getElementById("app").style.display="grid";const tag=document.querySelector(".top-tag");if(tag)tag.textContent=sessionStorage.getItem("combinze_guest_mode")==="1"?"● GUEST PREVIEW":"● SQUAD ONLINE";}
 document.getElementById("guestMode").addEventListener("click",()=>{sessionStorage.setItem("combinze_guest_mode","1");showCombinze();});
-(async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();syncCloudLibrary();syncCloudProjects();}else if(sessionStorage.getItem("combinze_guest_mode")==="1")showCombinze();})();
-authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){syncCloudLibrary();syncCloudProjects();}}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");setCloudSyncLabel("Browser only");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+(async()=>{const {data,error}=await authClient.auth.getSession();if(error){authError.textContent=error.message;return;}if(data.session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();refreshAdminAccess();syncCloudLibrary();syncCloudProjects();}else if(sessionStorage.getItem("combinze_guest_mode")==="1")showCombinze();})();
+authClient.auth.onAuthStateChange((event,session)=>{if(session){sessionStorage.removeItem("combinze_guest_mode");showCombinze();refreshAdminAccess();if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){syncCloudLibrary();syncCloudProjects();}}else if(event==="SIGNED_OUT"){sessionStorage.removeItem("combinze_guest_mode");setCloudSyncLabel("Browser only");document.getElementById("adminNav").hidden=true;document.getElementById("app").style.display="none";authScreen.hidden=false;}});
 
 const MAKER_API_URL="https://combinze-maker.reedyjhaddon.workers.dev/chat";
 const AGENT_API_URL="https://combinze-agent-router.reedyjhaddon.workers.dev/chat";
@@ -529,12 +539,29 @@ document.getElementById("newChat").addEventListener("click",makeChat);
 document.getElementById("newChatTop").addEventListener("click",makeChat);
 const featureModal=document.getElementById("featureModal"),featureTitle=document.getElementById("featureTitle"),featureContent=document.getElementById("featureContent");
 function openFeature(view){
- const names={scheduled:"Scheduled",library:"Library",customize:"Customize Combinze",projects:"Projects",plugins:"Plugins",remote:"Remote control",health:"Health",finances:"Finances",images:"Images",settings:"Settings"};
+ const names={scheduled:"Scheduled",library:"Library",customize:"Customize Combinze",projects:"Projects",plugins:"Plugins",remote:"Remote control",health:"Health",finances:"Finances",images:"Images",settings:"Settings",admin:"Admin Dashboard"};
  featureTitle.textContent=names[view]||"Workspace";featureContent.replaceChildren();
  const p=(t)=>{const el=document.createElement("p");el.textContent=t;featureContent.appendChild(el);return el};
  const note=(t)=>{const el=document.createElement("div");el.className="feature-note";el.textContent=t;featureContent.appendChild(el)};
  const row=(label,detail,action)=>{const el=document.createElement("div");el.className="feature-row";const a=document.createElement("span");a.textContent=label;const b=document.createElement("small");b.textContent=detail; b.style.color="#8794aa";el.append(a,b);if(action){const btn=document.createElement("button");btn.type="button";btn.textContent=action.label;btn.addEventListener("click",action.run);el.appendChild(btn)}featureContent.appendChild(el)};
- if(view==="library"){
+ if(view==="admin"){
+  p("Private Combinze control center. Metrics are available only to authorized administrator accounts.");
+  const state=document.createElement("div");state.className="feature-note";state.textContent="Verifying admin access…";featureContent.appendChild(state);
+  (async()=>{
+   try{
+    const {data}=await authClient.auth.getSession();const token=data.session?.access_token;
+    if(!token)throw new Error("Sign in to access admin tools.");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/combinze_admin_overview",{method:"POST",headers:cloudHeaders(token),body:"{}"});
+    if(!r.ok)throw new Error(r.status===403||r.status===401?"Access denied. This account is not an administrator.":"Admin metrics unavailable ("+r.status+")");
+    const metrics=await r.json();if(featureTitle.textContent!=="Admin Dashboard")return;
+    state.textContent="Authorized admin · Live database totals";
+    row("Registered accounts",String(metrics.users??"—"));
+    row("Saved conversations",String(metrics.conversations??"—"));
+    row("Cloud projects",String(metrics.projects??"—"));
+    note("System health, request logs, spending controls, and account management are planned. These totals are database counts, not live active-user or AI-usage metrics.");
+   }catch(e){if(featureTitle.textContent==="Admin Dashboard")state.textContent=e.message||"Admin access unavailable";}
+  })();
+ }else if(view==="library"){
   p("Your conversations are stored in this browser. Open one to continue.");
   const list=document.createElement("div");list.className="feature-list";
   if(!chats.length)p("No conversations yet.");
