@@ -29,7 +29,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .new-chat:hover{border-color:#a38cff;background:linear-gradient(110deg,rgba(133,96,232,.3),rgba(70,142,231,.2))}
 .side-label{display:flex;justify-content:space-between;align-items:center;color:#778198;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;padding:25px 9px 9px}
 .chat-search{width:100%;margin-top:13px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#101622;color:var(--text);font-size:12px;outline:0}.chat-search::placeholder{color:#69758b}.chat-search:focus{border-color:rgba(159,137,255,.6)}
-.chat-list{overflow:visible;min-height:auto;flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
+.chat-list{display:flex!important;flex:0 0 auto!important;flex-direction:column;gap:4px;overflow:visible!important;min-height:48px!important;height:auto!important;max-height:none!important;width:100%}.chat-list .chat-item,.chat-list .empty-list,.chat-list .chat-empty-search{flex:0 0 auto!important;display:flex!important;visibility:visible!important;opacity:1!important}.chat-list .chat-item{min-height:40px}
 .chat-item{width:100%;border:1px solid transparent;background:transparent;border-radius:10px;padding:10px 10px;display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;color:#b6bfd1;min-width:0}
 .chat-item:hover{background:#171d2a}
 .chat-item.active{background:#1a2030;border-color:rgba(159,139,255,.2);color:#fff}
