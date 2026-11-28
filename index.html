@@ -20,7 +20,7 @@ button,input,textarea{font:inherit}
 button{color:inherit}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
 .app{height:100dvh;width:100%;display:grid;grid-template-columns:280px minmax(0,1fr);background:radial-gradient(ellipse at 70% -15%,rgba(93,88,180,.17),transparent 42%),var(--bg)}
-.sidebar{min-width:0;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:rgba(13,16,25,.96);border-right:1px solid var(--line);padding:19px 14px calc(14px + env(safe-area-inset-bottom));z-index:5}
+.sidebar{min-width:0;min-height:0;display:flex;flex-direction:column;height:100dvh;overflow-y:scroll;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:rgba(13,16,25,.96);border-right:1px solid var(--line);padding:19px 14px calc(28px + env(safe-area-inset-bottom));z-index:5}
 .brand{display:flex;align-items:center;gap:11px;padding:3px 8px 21px}
 .brand-mark{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:linear-gradient(145deg,#9d7bff,#4b9eff);box-shadow:0 6px 24px #785ce944}
 .brand-name{font-weight:850;letter-spacing:.11em;font-size:14px}
@@ -29,7 +29,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .new-chat:hover{border-color:#a38cff;background:linear-gradient(110deg,rgba(133,96,232,.3),rgba(70,142,231,.2))}
 .side-label{display:flex;justify-content:space-between;align-items:center;color:#778198;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;padding:25px 9px 9px}
 .chat-search{width:100%;margin-top:13px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#101622;color:var(--text);font-size:12px;outline:0}.chat-search::placeholder{color:#69758b}.chat-search:focus{border-color:rgba(159,137,255,.6)}
-.chat-list{overflow:auto;min-height:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.chat-list{overflow:visible;min-height:auto;flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
 .chat-item{width:100%;border:1px solid transparent;background:transparent;border-radius:10px;padding:10px 10px;display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;color:#b6bfd1;min-width:0}
 .chat-item:hover{background:#171d2a}
 .chat-item.active{background:#1a2030;border-color:rgba(159,139,255,.2);color:#fff}
@@ -120,7 +120,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .empty-list{color:#68738a;font-size:12px;padding:12px 9px}
 @media(max-width:760px){
  .app{grid-template-columns:minmax(0,1fr)}
- .sidebar{position:fixed;left:0;top:0;bottom:0;width:min(84vw,310px);transform:translateX(-105%);transition:transform .22s ease;box-shadow:20px 0 60px #0008}
+ .sidebar{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:min(84vw,310px);overflow-y:scroll;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;transform:translateX(-105%);transition:transform .22s ease;box-shadow:20px 0 60px #0008}
  .app.menu-open .sidebar{transform:translateX(0)}
  .mobile-backdrop{display:block;position:fixed;inset:0;background:#0008;z-index:4;opacity:0;pointer-events:none;transition:opacity .2s}
  .app.menu-open .mobile-backdrop{opacity:1;pointer-events:auto}
