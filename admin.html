@@ -33,6 +33,21 @@ main{max-width:900px;margin:0 auto}.top{display:flex;justify-content:space-betwe
 <article class="card"><h2>REQUEST PROTECTION</h2><div class="value" id="limits">Checking…</div><div class="muted">Chat and image rate-limit bindings</div></article>
 </div>
 
+<section class="card" style="margin-top:14px">
+<h2>AI USAGE & DAILY BUDGET</h2>
+<div class="grid">
+ <article class="card"><div class="muted">Estimated cost today</div><div class="value" id="costToday">$0.0000</div></article>
+ <article class="card"><div class="muted">Chat requests today</div><div class="value" id="chatToday">0</div></article>
+ <article class="card"><div class="muted">Image requests today</div><div class="value" id="imageToday">0</div></article>
+ <article class="card"><div class="muted">Requests blocked by budget</div><div class="value" id="blockedToday">0</div></article>
+</div>
+<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:18px">
+ <label style="display:grid;gap:6px;flex:1;min-width:170px"><span class="muted">Daily AI estimate ceiling (USD)</span><input id="dailyBudget" type="number" min="0.05" max="100" step="0.05" value="1.00" style="padding:12px;border:1px solid var(--line);border-radius:10px;background:#0d1320;color:var(--text);font:inherit"></label>
+ <button id="saveBudget">Save daily limit</button>
+</div>
+<div class="muted" id="budgetMessage" style="margin-top:10px"></div>
+<div class="notice">Estimates use approximate token counts and published model rates. They are not invoices. Guest requests are currently not included in the per-user analytics. Compare against Cloudflare billing for actual usage.</div>
+</section>
 <div class="notice" id="notice"></div>
 </section>
 <div id="denied" class="hidden card"><h2>Access unavailable</h2><p class="muted" id="deniedText">This account is not authorized.</p></div>
@@ -73,6 +88,14 @@ async function setShutdown(value){
 }
 document.getElementById("shutdownBtn").addEventListener("click",()=>setShutdown(true));
 document.getElementById("restoreBtn").addEventListener("click",()=>setShutdown(false));
+async function saveBudget(){
+ const msg=document.getElementById("budgetMessage"),value=Number(document.getElementById("dailyBudget").value);
+ if(!Number.isFinite(value)||value<0.05||value>100){msg.textContent="Choose a value from $0.05 to $100.";return}
+ msg.textContent="Saving…";document.getElementById("saveBudget").disabled=true;
+ try{const r=await fetch(ROUTER+"/admin/budget",{method:"POST",headers:{Authorization:"Bearer "+currentSession.access_token,"Content-Type":"application/json"},body:JSON.stringify({dailyLimitUsd:value})});const data=await r.json();if(!r.ok)throw new Error(data.error||"Could not save limit");msg.textContent="Daily limit saved.";document.getElementById("dailyBudget").value=Number(data.dailyLimitUsd).toFixed(2)}
+ catch(e){msg.textContent=e.message}finally{document.getElementById("saveBudget").disabled=false}
+}
+document.getElementById("saveBudget").addEventListener("click",saveBudget);
 async function load(){
  state.textContent="Verifying admin access…";dash.classList.add("hidden");denied.classList.add("hidden");
  const {data,error}=await client.auth.getSession();
@@ -86,6 +109,7 @@ async function load(){
  document.getElementById("ai").textContent=result.services.ai?"Available":"Unavailable";
  document.getElementById("limits").textContent=result.services.chatRateLimit&&result.services.imageRateLimit?"Active":"Incomplete";
  document.getElementById("notice").textContent=result.notice;
+ if(result.usage){document.getElementById("costToday").textContent="$"+Number(result.usage.estimatedUsd||0).toFixed(4);document.getElementById("chatToday").textContent=result.usage.chatRequests||0;document.getElementById("imageToday").textContent=result.usage.imageRequests||0;document.getElementById("blockedToday").textContent=result.usage.blockedRequests||0;document.getElementById("dailyBudget").value=Number(result.usage.dailyLimitUsd||1).toFixed(2)}
  state.textContent="Admin access verified.";dash.classList.remove("hidden");await loadShutdown();
  }catch(e){state.textContent="Could not reach the admin service. Try again.";denied.classList.remove("hidden");document.getElementById("deniedText").textContent="The admin service could not be reached."}
 }
