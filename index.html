@@ -577,8 +577,12 @@ function openFeature(view){
   note("Guest projects stay on this device. Sign in to sync projects privately through your account.");
   }else if(view==="settings"){
    p("Manage your Combinze account and workspace.");
-   row("Account","Signed-in account or guest preview",{label:"View",run:async()=>{const {data,error}=await authClient.auth.getUser();const d=document.createElement("p");d.textContent=error?"Could not load account details.":data.user?.email||"You're using guest preview.";featureContent.appendChild(d)}});
-   row("Sign out","End this session",{label:"Sign out",run:async()=>{const {error}=await authClient.auth.signOut();if(error){alert("Could not sign out: "+error.message);return;}sessionStorage.removeItem("combinze_guest_mode");document.getElementById("app").style.display="none";authScreen.hidden=false;}});
+   const accountState=document.createElement("div");accountState.className="feature-note";accountState.textContent="Loading account…";featureContent.appendChild(accountState);
+   (async()=>{try{const {data,error}=await authClient.auth.getUser();if(error)throw error;accountState.textContent=data.user?.email?"Currently signed in as "+data.user.email:"You're using guest preview. Sign in to sync chats and switch between accounts.";}catch(e){accountState.textContent="Account details are temporarily unavailable.";}})();
+   const leaveAccount=async()=>{const {error}=await authClient.auth.signOut();if(error){alert("Could not sign out: "+error.message);return;}sessionStorage.removeItem("combinze_guest_mode");document.getElementById("app").style.display="none";authScreen.hidden=false;featureModal.hidden=true;};
+   row("Switch account","Sign out, then choose another existing account or create one",{label:"Switch",run:leaveAccount});
+   row("Log out","End your current Combinze session",{label:"Log out",run:leaveAccount});
+   note("Switching accounts signs out of the current account and returns to the Combinze sign-in screen. Choose another account there. Only one account is active at a time on this browser.");
    row("Customize Combinze","Choose your specialists",{label:"Open",run:()=>openFeature("customize")});
    row("Usage and limits","AI requests are protected by short-term limits",{label:"Details",run:()=>note("Chat: 60 requests per minute per IP and signed-in account. Images: 12 per minute per IP and signed-in account. These are not daily or monthly spending budgets.")});
    row("Notifications","Not connected yet",{label:"Info",run:()=>note("Push and email notification preferences are planned, but not active yet.")});
